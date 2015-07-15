@@ -1,4 +1,4 @@
-# EMessenger
+# WinkBackend
 ## Ogólny opis projektu
 Celem projektu jest zaimplementowanie prostego komunikatora, pozwalającego na przesyłanie krótkich wiaodmości pomiędzy użytkownikami.
 
