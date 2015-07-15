@@ -8,3 +8,5 @@ Celem projektu jest zaimplementowanie prostego komunikatora, pozwalającego na p
 3. System zezwala na wysłanie wiadomości do osoby nieznajomej podając jej nickname.
 4. Użytkownik może określić czy chcę otrzymywać wiadomości od osób nieznajomych.
 5. Wiadomości są prezentowane w formie strumienia wiadomości z uwzględnienim UI dopasowanego do długości wiadomości.
+
+
