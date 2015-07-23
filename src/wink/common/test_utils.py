@@ -1,4 +1,4 @@
-from json import dumps
+from json import dumps, loads
 from django.test import TestCase
 from django.test.client import Client
 
@@ -14,6 +14,13 @@ class APITestClient(Client):
 
 
 class APITestsBase(TestCase):
+    STATUS_CODE_VALIDATION_ERROR = 422
     client_class = APITestClient
 
+    def assertAPIReturnedValidationError(self, response):
+        self.assertEquals(response.status_code, self.STATUS_CODE_VALIDATION_ERROR)
+
+    def assertAPIValidationErrorHasKey(self, response, key):
+        data = loads(response.content)
+        self.assertTrue(key in data['errors'])
 

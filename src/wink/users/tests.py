@@ -42,9 +42,8 @@ class UserAPITestCase(APITestsBase):
         del post_data['email']
         response = self.client.post('/users', data=post_data)
 
-        self.assertEquals(response.status_code, 422)
-        data = loads(response.content)
-        self.assertTrue('email' in data['errors'])
+        self.assertAPIReturnedValidationError(response)
+        self.assertAPIValidationErrorHasKey(response, 'email')
 
     def test_create_user_extra_param(self):
         post_data = self.VALID_USER_DATA.copy()
@@ -58,15 +57,13 @@ class UserAPITestCase(APITestsBase):
         post_data['handle'] = 'no'
 
         response = self.client.post('/users', data=post_data)
-        self.assertEquals(response.status_code, 422)
-        data = loads(response.content)
-        self.assertTrue('handle' in data['errors'])
+        self.assertAPIReturnedValidationError(response)
+        self.assertAPIValidationErrorHasKey(response, 'handle')
 
     def test_missing_display_name_fails(self):
         post_data = self.VALID_USER_DATA
         del post_data['display_name']
 
         response = self.client.post('/users', data=post_data)
-        self.assertEquals(response.status_code, 422)
-        data = loads(response.content)
-        self.assertTrue('display_name' in data['errors'])
+        self.assertAPIReturnedValidationError(response)
+        self.assertAPIValidationErrorHasKey(response, 'display_name')
