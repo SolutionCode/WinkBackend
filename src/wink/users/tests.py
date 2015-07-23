@@ -10,14 +10,16 @@ class UserModelTests(TestCase):
         pass
 
 class UserAPITestCase(TestCase):
-    EMAIL = 'test@example.com'
-    HANDLE = '@test'
-    FIRST_NAME = 'Test'
-    LAST_NAME = 'User'
-    PASSWORD = 'test'
+    VALID_USER_DATA = {
+        'email': 'test@example.com',
+        'first_name': 'Test',
+        'last_name': 'User',
+        'handle': '@handle',
+        'password': 'password'
+    }
 
     def test_get_existing_user(self):
-        user = User.objects.create(email=self.EMAIL)
+        user = User.objects.create(email=self.VALID_USER_DATA['email'])
 
         response = self.client.get('/users/{pk}'.format(pk=user.pk), follow=True)
 
@@ -32,34 +34,30 @@ class UserAPITestCase(TestCase):
         self.assertEquals(response.status_code, 404)
 
     def test_create_user(self):
-        valid_user_data = {
-            'email': self.EMAIL,
-            'first_name': self.FIRST_NAME,
-            'last_name': self.LAST_NAME,
-            'handle': self.HANDLE,
-            'password': self.PASSWORD
-        }
-        response = self.client.post('/users', data=dumps(valid_user_data), content_type='application/json')
+        response = self.client.post('/users', data=dumps(self.VALID_USER_DATA), content_type='application/json')
 
         self.assertEquals(response.status_code, 201)
         self.assertTrue('/users/1' in response['Location'])
 
     def test_create_user_missing_username(self):
-        valid_user_data = {}
-        response = self.client.post('/users', data=dumps(valid_user_data), content_type='application/json')
+        post_data = self.VALID_USER_DATA.copy()
+        del post_data['email']
+        response = self.client.post('/users', data=dumps(post_data), content_type='application/json')
 
         self.assertEquals(response.status_code, 422)
 
     def test_create_user_extra_param(self):
-        valid_user_data = {
-            'email': self.EMAIL,
-            'first_name': self.FIRST_NAME,
-            'last_name': self.LAST_NAME,
-            'handle': self.HANDLE,
-            'password': self.PASSWORD,
-
-            'extra': 'something extra'
-        }
-        response = self.client.post('/users', data=dumps(valid_user_data), content_type='application/json')
+        post_data = self.VALID_USER_DATA.copy()
+        post_data['extra_freld'] = 'testing'
+        response = self.client.post('/users', data=dumps(post_data), content_type='application/json')
 
         self.assertEquals(response.status_code, 201)
+
+    def test_invalid_handle_fails(self):
+        post_data = self.VALID_USER_DATA
+        post_data['handle'] = 'no'
+
+        response = self.client.post('/users', data=dumps(post_data), content_type='application_json')
+        self.assertEquals(response.status_code, 422)
+        data = loads(response.content)
+        self.assertTrue('handle' in data['errors'])

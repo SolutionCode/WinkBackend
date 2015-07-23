@@ -34,12 +34,12 @@ def users_list(request):
     if request.method == 'POST':
         user_form = UserForm(loads(request.body))
         if not user_form.is_valid():
-            return HttpResponseEntityCouldNotBeProcessed()
+            return HttpResponseEntityCouldNotBeProcessed(dumps({'errors': user_form.errors}))
 
         user = user_form.save()
         data = user_fields_preparer.prepare(user)
         response = HttpResponseCreated(dumps(data))
-        response['Location'] = reverse('users-detail', args=[user.pk])
+        response['Location'] = reverse('usersK-detail', args=[user.pk])
         return response
 
     return HttpResponseNotAllowed(permitted_methods=['POST'])
