@@ -39,7 +39,7 @@ def users_list(request):
         user = user_form.save()
         data = user_fields_preparer.prepare(user)
         response = HttpResponseCreated(dumps(data))
-        response['Location'] = reverse('usersK-detail', args=[user.pk])
+        response['Location'] = reverse('users-detail', args=[user.pk])
         return response
 
     return HttpResponseNotAllowed(permitted_methods=['POST'])
