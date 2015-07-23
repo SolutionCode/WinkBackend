@@ -37,6 +37,10 @@ class UserAPITestCase(APITestsBase):
         self.assertEquals(response.status_code, 201)
         self.assertTrue('/users/{pk}'.format(pk=user.pk) in response['Location'])
 
+        data = loads(response.content)
+        self.assertEquals(data['id'], user.pk)
+        self.assertEquals(data['email'], user.email)
+
     def test_create_user_missing_email(self):
         post_data = self.VALID_USER_DATA.copy()
         del post_data['email']

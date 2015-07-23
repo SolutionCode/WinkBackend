@@ -25,7 +25,7 @@ def user_detail(request, pk):
             return HttpResponseNotFound()
 
         data = user_fields_preparer.prepare(user)
-        return HttpResponse(dumps(data))
+        return HttpResponse(dumps(data), content_type='application/json')
 
     return HttpResponseNotAllowed(permitted_methods=['GET'])
 
@@ -34,11 +34,11 @@ def users_list(request):
     if request.method == 'POST':
         user_form = UserForm(loads(request.body))
         if not user_form.is_valid():
-            return HttpResponseEntityCouldNotBeProcessed(dumps({'errors': user_form.errors}))
+            return HttpResponseEntityCouldNotBeProcessed(dumps({'errors': user_form.errors}), content_type='application/json')
 
         user = user_form.save()
         data = user_fields_preparer.prepare(user)
-        response = HttpResponseCreated(dumps(data))
+        response = HttpResponseCreated(dumps(data), content_type='application/json')
         response['Location'] = reverse('users-detail', args=[user.pk])
         return response
 
