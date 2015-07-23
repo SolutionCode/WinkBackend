@@ -8,8 +8,7 @@ from users.models import User
 class UserAPITestCase(APITestsBase):
     VALID_USER_DATA = {
         'email': 'test@example.com',
-        'first_name': 'Test',
-        'last_name': 'User',
+        'display_name': 'Test User',
         'handle': '@handle',
         'password': 'password'
     }
@@ -62,3 +61,12 @@ class UserAPITestCase(APITestsBase):
         self.assertEquals(response.status_code, 422)
         data = loads(response.content)
         self.assertTrue('handle' in data['errors'])
+
+    def test_missing_display_name_fails(self):
+        post_data = self.VALID_USER_DATA
+        del post_data['display_name']
+
+        response = self.client.post('/users', data=post_data)
+        self.assertEquals(response.status_code, 422)
+        data = loads(response.content)
+        self.assertTrue('display_name' in data['errors'])

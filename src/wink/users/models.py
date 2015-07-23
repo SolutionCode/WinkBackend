@@ -30,15 +30,15 @@ class User(AbstractBaseUser):
     email = models.EmailField(
         max_length=255,
         unique=True,
+        db_index=True
     )
     phone_number = models.CharField(max_length=32, null=True, blank=True)
 
-    handle = models.CharField(max_length=32, unique=True, validators=[validate_handle])
-    first_name = models.CharField(max_length=32)
-    last_name = models.CharField(max_length=32)
+    handle = models.CharField(max_length=32, unique=True, db_index=True, validators=[validate_handle])
+    display_name = models.CharField(max_length=64)
     date_of_birth = models.DateField(null=True, blank=True)
 
-    is_active = models.BooleanField(default=True)
+    is_active = models.BooleanField(default=True, db_index=True)
     is_admin = models.BooleanField(default=False)
 
     created_at = models.DateTimeField(auto_now_add=True)
@@ -46,7 +46,7 @@ class User(AbstractBaseUser):
     objects = UserManager()
 
     USERNAME_FIELD = 'email'
-    REQUIRED_FIELDS = ['handle']
+    REQUIRED_FIELDS = ['handle', 'display_name']
 
     def get_full_name(self):
         return self.email
