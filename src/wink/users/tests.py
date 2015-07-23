@@ -18,7 +18,7 @@ class UserAPITestCase(APITestsBase):
 
         response = self.client.get('/users/{pk}'.format(pk=user.pk), follow=True)
 
-        self.assertEquals(response.status_code, 200)
+        self.assertAPIReturnedOKStatus(response)
         data = loads(response.content)
         self.assertEquals(data['id'], user.pk)
         self.assertEquals(data['email'], user.email)
@@ -26,7 +26,7 @@ class UserAPITestCase(APITestsBase):
     def test_get_not_existing_user(self):
         response = self.client.get('/users/1', follow=True)
 
-        self.assertEquals(response.status_code, 404)
+        self.assertAPIReturnedNotFoundStatus(response)
 
     def test_create_user(self):
         response = self.client.post('/users', data=self.VALID_USER_DATA)
@@ -34,7 +34,7 @@ class UserAPITestCase(APITestsBase):
         self.assertEquals(User.objects.count(), 1)
         user = User.objects.first()
 
-        self.assertEquals(response.status_code, 201)
+        self.assertAPIReturnedCreatedStatus(response)
         self.assertTrue('/users/{pk}'.format(pk=user.pk) in response['Location'])
 
         data = loads(response.content)
@@ -46,7 +46,7 @@ class UserAPITestCase(APITestsBase):
         del post_data['email']
         response = self.client.post('/users', data=post_data)
 
-        self.assertAPIReturnedValidationError(response)
+        self.assertAPIReturnedValidationErrorStatus(response)
         self.assertAPIValidationErrorHasKey(response, 'email')
 
     def test_create_user_extra_param(self):
@@ -54,14 +54,14 @@ class UserAPITestCase(APITestsBase):
         post_data['extra_freld'] = 'testing'
         response = self.client.post('/users', data=post_data)
 
-        self.assertEquals(response.status_code, 201)
+        self.assertAPIReturnedCreatedStatus(response)
 
     def test_invalid_handle_fails(self):
         post_data = self.VALID_USER_DATA
         post_data['handle'] = 'no'
 
         response = self.client.post('/users', data=post_data)
-        self.assertAPIReturnedValidationError(response)
+        self.assertAPIReturnedValidationErrorStatus(response)
         self.assertAPIValidationErrorHasKey(response, 'handle')
 
     def test_missing_display_name_fails(self):
@@ -69,7 +69,7 @@ class UserAPITestCase(APITestsBase):
         del post_data['display_name']
 
         response = self.client.post('/users', data=post_data)
-        self.assertAPIReturnedValidationError(response)
+        self.assertAPIReturnedValidationErrorStatus(response)
         self.assertAPIValidationErrorHasKey(response, 'display_name')
 
     def test_duplicate_email_fails(self):
@@ -79,7 +79,7 @@ class UserAPITestCase(APITestsBase):
         post_data['handle'] += '1'
 
         response = self.client.post('/users', data=post_data)
-        self.assertAPIReturnedValidationError(response)
+        self.assertAPIReturnedValidationErrorStatus(response)
         self.assertAPIValidationErrorHasKey(response, 'email')
 
     def test_duplicate_handle_fails(self):
@@ -89,7 +89,7 @@ class UserAPITestCase(APITestsBase):
         post_data['email'] += '1'
 
         response = self.client.post('/users', data=post_data)
-        self.assertAPIReturnedValidationError(response)
+        self.assertAPIReturnedValidationErrorStatus(response)
         self.assertAPIValidationErrorHasKey(response, 'handle')
 
     # test_created_user_has_default_auth_scheme

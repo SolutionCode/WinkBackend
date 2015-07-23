@@ -14,13 +14,24 @@ class APITestClient(Client):
 
 
 class APITestsBase(TestCase):
+    STATUS_CODE_OK = 200
+    STATUS_CODE_CREATED = 201
+    STATUS_CODE_NOT_FOUND = 404
     STATUS_CODE_VALIDATION_ERROR = 422
     client_class = APITestClient
 
-    def assertAPIReturnedValidationError(self, response):
+    def assertAPIReturnedValidationErrorStatus(self, response):
         self.assertEquals(response.status_code, self.STATUS_CODE_VALIDATION_ERROR)
 
     def assertAPIValidationErrorHasKey(self, response, key):
         data = loads(response.content)
         self.assertTrue(key in data['errors'])
 
+    def assertAPIReturnedCreatedStatus(self, response):
+        self.assertEquals(response.status_code, self.STATUS_CODE_CREATED)
+
+    def assertAPIReturnedOKStatus(self, response):
+        self.assertEquals(response.status_code, self.STATUS_CODE_OK)
+
+    def assertAPIReturnedNotFoundStatus(self, response):
+        self.assertEquals(response.status_code, self.STATUS_CODE_NOT_FOUND)
