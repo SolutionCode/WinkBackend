@@ -1,5 +1,3 @@
-from json import loads, dumps
-
 from common.test_utils import APITestsBase
 from users.models import User
 
@@ -19,7 +17,7 @@ class UserAPITestCase(APITestsBase):
         response = self.client.get('/users/{pk}'.format(pk=user.pk), follow=True)
 
         self.assertAPIReturnedOKStatus(response)
-        data = loads(response.content)
+        data = response.data
         self.assertEquals(data['id'], user.pk)
         self.assertEquals(data['email'], user.email)
 
@@ -37,7 +35,7 @@ class UserAPITestCase(APITestsBase):
         self.assertAPIReturnedCreatedStatus(response)
         self.assertTrue('/users/{pk}'.format(pk=user.pk) in response['Location'])
 
-        data = loads(response.content)
+        data = response.data
         self.assertEquals(data['id'], user.pk)
         self.assertEquals(data['email'], user.email)
 

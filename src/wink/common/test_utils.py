@@ -1,16 +1,36 @@
 from json import dumps, loads
+from functools import wraps
+
 from django.test import TestCase
 from django.test.client import Client
 
 
+def process_response(func):
+    @wraps(func)
+    def decorated(*args, **kwargs):
+        response = func(*args, **kwargs)
+        if 'Content-Type' in response and response['Content-Type'] == 'application/json':
+            setattr(response, 'data', loads(response.content))
+        else:
+            setattr(response, 'data', response.content)
+        return response
+
+    return decorated
+
+
 class APITestClient(Client):
 
+    @process_response
     def post(self, path, data=None, **kwargs):
         if isinstance(data, dict):
             data = dumps(data)
             kwargs['content_type'] = 'application/json'
 
         return super(APITestClient, self).post(path, data, **kwargs)
+
+    @process_response
+    def get(self, *args, **kwargs):
+        return super(APITestClient, self).get(*args, **kwargs)
 
 
 class APITestsBase(TestCase):
