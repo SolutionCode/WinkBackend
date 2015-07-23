@@ -1,15 +1,11 @@
 from json import loads, dumps
-from django.test import TestCase
 
+from common.test_utils import APITestsBase
 from users.models import User
 
 
-class UserModelTests(TestCase):
 
-    def test_invalid_handle(self):
-        pass
-
-class UserAPITestCase(TestCase):
+class UserAPITestCase(APITestsBase):
     VALID_USER_DATA = {
         'email': 'test@example.com',
         'first_name': 'Test',
@@ -34,15 +30,18 @@ class UserAPITestCase(TestCase):
         self.assertEquals(response.status_code, 404)
 
     def test_create_user(self):
-        response = self.client.post('/users', data=dumps(self.VALID_USER_DATA), content_type='application/json')
+        response = self.client.post('/users', data=self.VALID_USER_DATA)
+
+        self.assertEquals(User.objects.count(), 1)
+        user = User.objects.first()
 
         self.assertEquals(response.status_code, 201)
-        self.assertTrue('/users/1' in response['Location'])
+        self.assertTrue('/users/{pk}'.format(pk=user.pk) in response['Location'])
 
     def test_create_user_missing_email(self):
         post_data = self.VALID_USER_DATA.copy()
         del post_data['email']
-        response = self.client.post('/users', data=dumps(post_data), content_type='application/json')
+        response = self.client.post('/users', data=post_data)
 
         self.assertEquals(response.status_code, 422)
         data = loads(response.content)
@@ -51,7 +50,7 @@ class UserAPITestCase(TestCase):
     def test_create_user_extra_param(self):
         post_data = self.VALID_USER_DATA.copy()
         post_data['extra_freld'] = 'testing'
-        response = self.client.post('/users', data=dumps(post_data), content_type='application/json')
+        response = self.client.post('/users', data=post_data)
 
         self.assertEquals(response.status_code, 201)
 
@@ -59,7 +58,7 @@ class UserAPITestCase(TestCase):
         post_data = self.VALID_USER_DATA
         post_data['handle'] = 'no'
 
-        response = self.client.post('/users', data=dumps(post_data), content_type='application_json')
+        response = self.client.post('/users', data=post_data)
         self.assertEquals(response.status_code, 422)
         data = loads(response.content)
         self.assertTrue('handle' in data['errors'])
