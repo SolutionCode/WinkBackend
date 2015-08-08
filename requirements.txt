@@ -1,4 +1,9 @@
 Django==1.8.3
 argparse==1.2.1
 distribute==0.6.24
+django-braces==1.8.1
+django-oauth-toolkit==0.8.2
+djangorestframework==3.2.0
+oauthlib==1.0.0
+six==1.9.0
 wsgiref==0.1.2

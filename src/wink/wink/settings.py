@@ -38,6 +38,7 @@ INSTALLED_APPS = (
     # 'django.contrib.messages',
     'django.contrib.staticfiles',
 
+    'common',
     'users',
     'friends',
     'chats',
@@ -107,3 +108,7 @@ USE_TZ = True
 STATIC_URL = '/static/'
 
 AUTH_USER_MODEL = 'users.User'
+
+REST_FRAMEWORK = {
+    'EXCEPTION_HANDLER': 'common.rest.exception_handler'
+}
