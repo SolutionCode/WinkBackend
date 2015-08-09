@@ -24,6 +24,7 @@ class UserManager(BaseUserManager):
 def validate_handle(value):
     if value[0] != '@':
         raise ValidationError('Handle needs to start with @')
+    pass
 
 
 class User(AbstractBaseUser):
@@ -34,7 +35,8 @@ class User(AbstractBaseUser):
     )
     phone_number = models.CharField(max_length=32, null=True, blank=True)
 
-    handle = models.CharField(max_length=32, unique=True, db_index=True, validators=[validate_handle])
+    # handle = models.CharField(max_length=32, unique=True, db_index=True, validators=[validate_handle])
+    username = models.CharField(db_index=True, unique=True, max_length=255)
     display_name = models.CharField(max_length=64)
     date_of_birth = models.DateField(null=True, blank=True)
 
@@ -46,15 +48,12 @@ class User(AbstractBaseUser):
     objects = UserManager()
 
     USERNAME_FIELD = 'email'
-    REQUIRED_FIELDS = ['handle', 'display_name']
+    #REQUIRED_FIELDS = ['handle', 'display_name']
 
     def get_full_name(self):
         return self.email
 
     def get_short_name(self):
-        return self.email
-
-    def __unicode__(self):
         return self.email
 
     def has_perm(self, perm, obj=None):
@@ -66,3 +65,6 @@ class User(AbstractBaseUser):
     @property
     def is_staff(self):
         return self.is_admin
+
+    def __unicode__(self):
+        return ("email: %s, username: %s") % (self.email, self.username)

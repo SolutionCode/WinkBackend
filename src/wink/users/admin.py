@@ -52,10 +52,10 @@ class UserAdmin(ContribUserAdmin):
     form = UserChangeForm
     add_form = UserCreationForm
 
-    list_display = ('email', 'handle', 'display_name', 'date_of_birth', 'is_admin')
+    list_display = ('email', 'username', 'display_name', 'date_of_birth', 'is_admin')
     list_filter = ('is_admin',)
 
-    search_fields = ('email', 'handle', 'display_name')
+    search_fields = ('email', 'username', 'display_name')
     ordering = ('email',)
     filter_horizontal = ()
     fieldsets = ()

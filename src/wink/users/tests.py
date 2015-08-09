@@ -7,7 +7,7 @@ class UserAPITestCase(APITestsBase):
     VALID_USER_DATA = {
         'email': 'test@example.com',
         'display_name': 'Test User',
-        'handle': '@handle',
+        'username': '@username',
         'password': 'password'
     }
 
@@ -23,12 +23,10 @@ class UserAPITestCase(APITestsBase):
 
     def test_get_not_existing_user(self):
         response = self.client.get('/users/1', follow=True)
-
         self.assertAPIReturnedNotFoundStatus(response)
 
     def test_create_user(self):
-        response = self.client.post('/users', data=self.VALID_USER_DATA)
-
+        response = self.client.post('/users/', data=self.VALID_USER_DATA)
         self.assertEquals(User.objects.count(), 1)
         user = User.objects.first()
 
@@ -42,31 +40,30 @@ class UserAPITestCase(APITestsBase):
     def test_create_user_missing_email(self):
         post_data = self.VALID_USER_DATA.copy()
         del post_data['email']
-        response = self.client.post('/users', data=post_data)
-
+        response = self.client.post('/users/', data=post_data)
         self.assertAPIReturnedValidationErrorStatus(response)
         self.assertAPIValidationErrorHasKey(response, 'email')
 
     def test_create_user_extra_param(self):
         post_data = self.VALID_USER_DATA.copy()
         post_data['extra_freld'] = 'testing'
-        response = self.client.post('/users', data=post_data)
+        response = self.client.post('/users/', data=post_data)
 
         self.assertAPIReturnedCreatedStatus(response)
 
-    def test_invalid_handle_fails(self):
-        post_data = self.VALID_USER_DATA
-        post_data['handle'] = 'no'
+    # def test_invalid_username_fails(self):
+    #     post_data = self.VALID_USER_DATA
+    #     post_data['username'] = 'no'
 
-        response = self.client.post('/users', data=post_data)
-        self.assertAPIReturnedValidationErrorStatus(response)
-        self.assertAPIValidationErrorHasKey(response, 'handle')
+    #     response = self.client.post('/users/', data=post_data)
+    #     self.assertAPIReturnedValidationErrorStatus(response)
+    #     self.assertAPIValidationErrorHasKey(response, 'handle')
 
     def test_missing_display_name_fails(self):
         post_data = self.VALID_USER_DATA
         del post_data['display_name']
 
-        response = self.client.post('/users', data=post_data)
+        response = self.client.post('/users/', data=post_data)
         self.assertAPIReturnedValidationErrorStatus(response)
         self.assertAPIValidationErrorHasKey(response, 'display_name')
 
@@ -74,21 +71,40 @@ class UserAPITestCase(APITestsBase):
         User.objects.create(**self.VALID_USER_DATA)
 
         post_data = self.VALID_USER_DATA.copy()
-        post_data['handle'] += '1'
 
-        response = self.client.post('/users', data=post_data)
+        response = self.client.post('/users/', data=post_data)
         self.assertAPIReturnedValidationErrorStatus(response)
         self.assertAPIValidationErrorHasKey(response, 'email')
 
-    def test_duplicate_handle_fails(self):
+    def test_duplicate_username_fails(self):
         User.objects.create(**self.VALID_USER_DATA)
 
         post_data = self.VALID_USER_DATA.copy()
         post_data['email'] += '1'
-
-        response = self.client.post('/users', data=post_data)
+        response = self.client.post('/users/', data=post_data)
         self.assertAPIReturnedValidationErrorStatus(response)
-        self.assertAPIValidationErrorHasKey(response, 'handle')
+        self.assertAPIValidationErrorHasKey(response, 'username')
 
-    # test_created_user_has_default_auth_scheme
-    # test_created_user_with_custom_auth_scheme
+
+from oauth2_provider.models import Application
+class OAuth2UserAPITestCase(APITestsBase):
+    VALID_USER_DATA = {
+        'email': 'test@example.com',
+        'display_name': 'Test User',
+        'username': '@username',
+        'password': 'password'
+    }
+
+    def create_application(self):
+        instance = User.objects.create(**self.VALID_USER_DATA)
+        return Application.objects.create(user=instance, 
+                                   client_type=Application.CLIENT_CONFIDENTIAL,
+                                   authorization_grant_type=Application.GRANT_PASSWORD)
+
+    def test_create_application(self):
+        app = self.create_application()
+        self.assertFalse(app.client_id == '')
+        self.assertFalse(app.client_secret == '')
+
+    def test_wrong_client_id(self):
+        app = self.create_application()
