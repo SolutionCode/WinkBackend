@@ -1,5 +1,10 @@
 from rest_framework import generics
+from django.contrib.auth import logout
+from django.http import HttpResponse
+from django.contrib.auth import login
+from social.apps.django_app.utils import psa
 
+from users.tools import get_access_token
 from users.models import User
 from users.serializers import UserSerializer
 
@@ -8,15 +13,11 @@ class UserCreateView(generics.ListCreateAPIView):
     queryset = User.objects.all()
     serializer_class = UserSerializer
 
+
 class UserRetrieveView(generics.RetrieveAPIView):
     queryset = User.objects.all()
     serializer_class = UserSerializer
 
-from django.http import HttpResponse
-from django.contrib.auth import login
-from social.apps.django_app.utils import psa
-from .tools import get_access_token
- 
 # When we send a third party access token to that view
 # as a GET request with access_token parameter, 
 # python social auth communicate with
@@ -37,12 +38,7 @@ def register_by_access_token(request, backend):
         # If there was an error... you decide what you do here
         return HttpResponse("error")
 
-from django.contrib.auth import logout
 
 def logout_view(request):
     logout(request)
     # Redirect to a success page.
-
-
-def secret_view(request):
-    

@@ -6,7 +6,7 @@ from users.views import UserCreateView, UserRetrieveView, register_by_access_tok
 urlpatterns = [
     url(r'^(?P<pk>[0-9]+)$', UserRetrieveView.as_view(), name='user-detail'),
     url(r'^$', UserCreateView.as_view(), name='user-list'),
-    url(r'^register-by-token/(?P<backend>[^/]+)/$',register_by_access_token),
+    url(r'^register-by-token/(?P<backend>[^/]+)/$', register_by_access_token),
 ]
 
 urlpatterns += [

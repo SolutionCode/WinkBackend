@@ -1,3 +1,5 @@
+from oauth2_provider.models import Application
+
 from common.test_utils import APITestsBase
 from users.models import User
 
@@ -86,7 +88,6 @@ class UserAPITestCase(APITestsBase):
         self.assertAPIValidationErrorHasKey(response, 'username')
 
 
-from oauth2_provider.models import Application
 class OAuth2UserAPITestCase(APITestsBase):
     VALID_USER_DATA = {
         'email': 'test@example.com',
