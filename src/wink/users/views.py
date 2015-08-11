@@ -1,12 +1,16 @@
 from rest_framework import generics
+from rest_framework.decorators import api_view, permission_classes
+from rest_framework.permissions import IsAuthenticated
 from django.contrib.auth import logout
 from django.http import HttpResponse
 from django.contrib.auth import login
+from django.http import JsonResponse
 from social.apps.django_app.utils import psa
 
 from users.tools import get_access_token
 from users.models import User
 from users.serializers import UserSerializer
+
 
 
 class UserCreateView(generics.ListCreateAPIView):
@@ -42,3 +46,9 @@ def register_by_access_token(request, backend):
 def logout_view(request):
     logout(request)
     # Redirect to a success page.
+
+
+@api_view(['GET'])
+@permission_classes((IsAuthenticated,))
+def secret(request, *args, **kwargs):
+    return JsonResponse({'status': 'success'})

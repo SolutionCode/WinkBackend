@@ -92,7 +92,7 @@ SOCIAL_AUTH_PIPELINE = (
     # Send a validation email to the user to verify its email address.
     # Disabled by default.
     # 'social.pipeline.mail.mail_validation',
-    'users.pipeline.debug',
+    #'users.pipeline.debug',
     # Associates the current social details with another user account with
     # a similar email address. Disabled by default.
     'social.pipeline.social_auth.associate_by_email',

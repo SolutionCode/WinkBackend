@@ -36,6 +36,8 @@ class APITestClient(Client):
 class APITestsBase(TestCase):
     STATUS_CODE_OK = 200
     STATUS_CODE_CREATED = 201
+    STATUS_CODE_UNAUTHORIZED = 401
+    STATUS_CODE_PERMISSION_DENIED = 403
     STATUS_CODE_NOT_FOUND = 404
     STATUS_CODE_VALIDATION_ERROR = 422
     client_class = APITestClient
@@ -55,3 +57,9 @@ class APITestsBase(TestCase):
 
     def assertAPIReturnedNotFoundStatus(self, response):
         self.assertEquals(response.status_code, self.STATUS_CODE_NOT_FOUND)
+
+    def assertAPIReturnedUnauthorized(self, response):
+        self.assertEquals(response.status_code, self.STATUS_CODE_UNAUTHORIZED)
+
+    def assertAPIReturnedPermissionDenied(self, response):
+        self.assertEquals(response.status_code, self.STATUS_CODE_PERMISSION_DENIED)

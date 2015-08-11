@@ -107,5 +107,9 @@ class OAuth2UserAPITestCase(APITestsBase):
         self.assertFalse(app.client_id == '')
         self.assertFalse(app.client_secret == '')
 
-    def test_wrong_client_id(self):
-        app = self.create_application()
+    def test_anonymous_cannot_access_secret(self):
+        response = self.client.get('/users/secret', follow=True)
+        self.assertAPIReturnedPermissionDenied(response)
+
+    def test_user_can_access_secret(self):
+        pass
