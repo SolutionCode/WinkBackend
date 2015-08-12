@@ -19,7 +19,6 @@ def process_response(func):
 
 
 class APITestClient(Client):
-
     @process_response
     def post(self, path, data=None, **kwargs):
         if isinstance(data, dict):
@@ -36,6 +35,7 @@ class APITestClient(Client):
 class APITestsBase(TestCase):
     STATUS_CODE_OK = 200
     STATUS_CODE_CREATED = 201
+    STATUS_CODE_BAD_REQUEST = 400
     STATUS_CODE_UNAUTHORIZED = 401
     STATUS_CODE_PERMISSION_DENIED = 403
     STATUS_CODE_NOT_FOUND = 404
@@ -47,7 +47,15 @@ class APITestsBase(TestCase):
 
     def assertAPIValidationErrorHasKey(self, response, key):
         data = loads(response.content)
-        self.assertTrue(key in data['errors'])
+        error_key = 'errors' if 'errors' in data else 'error'
+        self.assertTrue(key in data[error_key])
+
+    def assertAPIReturnedKey(self, response, key, value=None):
+        if value:
+            self.assertTrue(response.data.get(key) == value,
+                            "key: %s, doesn't have val: %s, instead: %s" % (key, value, response.data.get(key)))
+        else:
+            self.assertIsNotNone(response.data.get(key))
 
     def assertAPIReturnedCreatedStatus(self, response):
         self.assertEquals(response.status_code, self.STATUS_CODE_CREATED)

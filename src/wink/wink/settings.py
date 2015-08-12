@@ -60,9 +60,13 @@ REST_FRAMEWORK = {
     )
 }
 
+
 OAUTH2_PROVIDER = {
     # this is the list of available scopes
-    'SCOPES': {'read': 'Read scope', 'write': 'Write scope'}
+    'SCOPES': {'read': 'Read scope', 'write': 'Write scope'},
+    # use this to sent authentication via json instead of post
+    # refer https://github.com/evonove/django-oauth-toolkit/issues/127
+    'OAUTH2_BACKEND_CLASS': 'oauth2_provider.oauth2_backends.JSONOAuthLibCore'
 }
 
 SOCIAL_AUTH_PIPELINE = (

@@ -9,7 +9,6 @@ from django.core.exceptions import ValidationError
 class UserManager(BaseUserManager):
     def create_user(self, password=None, **kwargs):
         user = self.model(**kwargs)
-
         user.set_password(password)
         user.save()
         return user
@@ -48,7 +47,7 @@ class User(AbstractBaseUser):
     objects = UserManager()
 
     USERNAME_FIELD = 'email'
-    # REQUIRED_FIELDS = ['handle', 'display_name']
+    REQUIRED_FIELDS = ['username']
 
     def get_full_name(self):
         return self.email

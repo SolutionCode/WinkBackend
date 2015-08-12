@@ -1,9 +1,8 @@
-from oauth2_provider.models import Application
+import base64
 
+from oauth2_provider.models import Application
 from common.test_utils import APITestsBase
 from users.models import User
-
-
 
 class UserAPITestCase(APITestsBase):
     VALID_USER_DATA = {
@@ -95,21 +94,56 @@ class OAuth2UserAPITestCase(APITestsBase):
         'username': '@username',
         'password': 'password'
     }
+    OAUTH2_URL = '/o/token/'
 
-    def create_application(self):
-        instance = User.objects.create(**self.VALID_USER_DATA)
-        return Application.objects.create(user=instance, 
-                                   client_type=Application.CLIENT_CONFIDENTIAL,
-                                   authorization_grant_type=Application.GRANT_PASSWORD)
+    def get_auth_header(self, app):
+        return self.get_auth_headers_raw(app.client_id, app.client_secret)
+
+    def get_auth_headers_raw(self, id, secret):
+        return {
+            'HTTP_AUTHORIZATION': 'Basic ' + base64.b64encode(id + ':' + secret),
+        }
+
+    def user_data2auth_data(self, user):
+        return {'grant_type': 'password', 'username': user['email'], 'password': user['password']}
+
+    def get_application(self):
+        user = User.objects.create_user(**self.VALID_USER_DATA)
+        app = Application.objects.create(user=user,
+                                         client_type=Application.CLIENT_CONFIDENTIAL,
+                                         authorization_grant_type=Application.GRANT_PASSWORD)
+        return app, user
+
+    ############### OAuth2.0 tests ###############
 
     def test_create_application(self):
-        app = self.create_application()
+        app, user = self.get_application()
         self.assertFalse(app.client_id == '')
         self.assertFalse(app.client_secret == '')
+
+    def test_unsupported_grant_type(self):
+        app, user = self.get_application()
+        response = self.client.post(self.OAUTH2_URL, self.get_auth_header(app))
+        self.assertAPIValidationErrorHasKey(response, "unsupported_grant_type")
+
+    def test_user_get_token_after_registration(self):
+        app, user = self.get_application()
+        data=self.user_data2auth_data(self.VALID_USER_DATA)
+        response = self.client.post(self.OAUTH2_URL, data=data, **self.get_auth_header(app))
+        data = response.data
+        self.assertAPIReturnedKey(response, 'token_type', 'Bearer')
+        self.assertIsNotNone(data['access_token'])
+        self.assertIsNotNone(data['refresh_token'])
+        self.assertIsNotNone(data['expires_in'])
+        self.assertIsNotNone(data['scope'])
+
+    ############### OAuth2.0 tests ###############
 
     def test_anonymous_cannot_access_secret(self):
         response = self.client.get('/users/secret', follow=True)
         self.assertAPIReturnedPermissionDenied(response)
 
     def test_user_can_access_secret(self):
-        pass
+        response = self.client.get('/users/secret', follow=True)
+        # TODO: implement me
+        # self.assertAPIReturnedKey(response, 'status', 'success')
