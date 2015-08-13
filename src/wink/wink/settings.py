@@ -38,6 +38,9 @@ INSTALLED_APPS = (
     # 'django.contrib.messages',
     'django.contrib.staticfiles',
 
+    #For Django Rest Framework
+    'rest_framework',
+
     'users',
     'friends',
     'chats',
@@ -105,3 +108,5 @@ USE_TZ = True
 # https://docs.djangoproject.com/en/1.8/howto/static-files/
 
 STATIC_URL = '/static/'
+
+AUTH_USER_MODEL = 'auth.User'
