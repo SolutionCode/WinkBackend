@@ -57,7 +57,8 @@ AUTHENTICATION_BACKENDS = (
 REST_FRAMEWORK = {
     'DEFAULT_AUTHENTICATION_CLASSES': (
         'oauth2_provider.ext.rest_framework.OAuth2Authentication',
-    )
+    ),
+    'EXCEPTION_HANDLER': 'common.rest.exception_handler',
 }
 
 
@@ -212,6 +213,3 @@ STATIC_URL = '/static/'
 
 AUTH_USER_MODEL = 'users.User'
 
-REST_FRAMEWORK = {
-    'EXCEPTION_HANDLER': 'common.rest.exception_handler'
-}
