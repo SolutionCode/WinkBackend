@@ -64,12 +64,12 @@ class APITestsBase(TestCase):
         error_key = 'errors' if 'errors' in data else 'error'
         self.assertTrue(key in data[error_key])
 
-    def assertAPIReturnedKey(self, response, key, value=None):
+    def assertAPIReturnedKey(self, data, key, value=None):
         if value:
-            self.assertTrue(response.data.get(key) == value,
-                            "key: %s, doesn't have val: %s, instead: %s" % (key, value, response.data.get(key)))
+            self.assertTrue(data.get(key) == value,
+                            "key: %s, doesn't have val: %s, instead: %s" % (key, value, data.get(key)))
         else:
-            self.assertIsNotNone(response.data.get(key))
+            self.assertIsNotNone(data.get(key))
 
     def assertAPIReturnedCreatedStatus(self, response):
         self.assertEquals(response.status_code, self.STATUS_CODE_CREATED)
@@ -111,7 +111,8 @@ class APITestClientLogin(APITestsBase):
         user = User.objects.create_user(**self.APP_USER_DATA)
         app = Application.objects.create(user=user,
                                          client_type=Application.CLIENT_CONFIDENTIAL,
-                                         authorization_grant_type=Application.GRANT_PASSWORD)
+                                         authorization_grant_type=Application.GRANT_PASSWORD,
+                                         name='wink-android')
         return user, app
 
     def __get_auth_header(self, app):
@@ -134,6 +135,16 @@ class APITestClientLogin(APITestsBase):
         data = self.__user_data2auth_data(user_data)
         return self.client.post(self.OAUTH2_URL, data=data, **self.__get_auth_header(self.app))
 
-    def login_persistent(self, user_data):
+    def login_persistent_with_json(self, user_data):
         response = self.login(user_data)
-        self.client.set_token(response.data['access_token'])
+        self.login_persistent(response.data)
+
+    def login_persistent(self, data):
+        self.client.set_token(data['access_token'])
+
+    def check_valid_token(self, data):
+        self.assertAPIReturnedKey(data, 'token_type', 'Bearer')
+        self.assertIsNotNone(data['access_token'])
+        self.assertIsNotNone(data['refresh_token'])
+        self.assertIsNotNone(data['expires_in'])
+        self.assertIsNotNone(data['scope'])
