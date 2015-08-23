@@ -102,7 +102,7 @@ class APITestClientLogin(APITestsBase):
         'password': 'password'
     }
 
-    OAUTH2_URL = '/o/token/'
+    OAUTH2_URL = '/oauth2/token/'
 
     def setUp(self):
         self.app_user, self.app = self.__get_application()
@@ -125,8 +125,6 @@ class APITestClientLogin(APITestsBase):
 
     def __user_data2auth_data(self, user_data):
         return {'grant_type': 'password', 'username': user_data['email'], 'password': user_data['password']}
-
-    ### Public methods ###
 
     def get_valid_user(self):
         return User.objects.create_user(**self.VALID_USER_DATA)

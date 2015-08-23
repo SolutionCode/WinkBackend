@@ -87,6 +87,7 @@ class UserAPITestCase(APITestsBase):
 
 
 class OAuth2UserAPITestCase(APITestClientLogin):
+
     ############### OAuth2.0 tests ###############
 
     def test_create_application(self):
