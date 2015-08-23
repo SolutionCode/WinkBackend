@@ -61,7 +61,8 @@ class APITestsBase(TestCase):
 
     def assertAPIValidationErrorHasKey(self, response, key):
         data = loads(response.content)
-        error_key = 'errors' if 'errors' in data else 'error'
+        #error_key = 'errors' if 'errors' in data else 'error'
+        error_key = 'errors'
         self.assertTrue(key in data[error_key])
 
     def assertAPIReturnedKey(self, data, key, value=None):
