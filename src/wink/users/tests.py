@@ -149,8 +149,8 @@ class FacebookTestCase(APITestClientLogin):
     EXTENDED_FACEBOOK_TOKEN1 = "CAAUshhSyCnEBAIXwDP2osd01os2pO0bKUoSgdkVxiiaZBdS1KBs8lZBO3ZCNFsWB7RPyTVuY0V6A4NnmeL2e1kYzexukL0TiCK3H3PzW2oSC0SYMYVHorXQIF8DquPipRhzhLJsixEOQNGsUw0clHVIHSByxQ2apuZA7jmB976dzyhK7CvnL6rptiyI7tCYZD"
     EXTENDED_FACEBOOK_TOKEN2 = "CAAUshhSyCnEBAPaxXFXwG2UaEWuEe6mkkU9o7pXNJZCTlSMP1J5kHEnPL1tSODbLE75jZBlv1mC3c4zrXfewKT7eIi26cqbce1IFv5k7oSGCYYwZCOWMEAoIEYVrQyfo6qs3t2cVDZCCxStCwrU2keQKhVouzKL9RfYlPzD65Dm2JAf8hwxF37FuzWKZBQg4ZD"
     INVALID_FACEBOOK_TOKEN = "1"
-    REGISTRATION_URL = "/users/register-social/facebook/{token}/"
-    LOGIN_URL = "/users/login-social/facebook/{token}/"
+    REGISTRATION_URL = "/tokens/register-social/facebook/{token}/"
+    LOGIN_URL = "/tokens/login-social/facebook/{token}/"
 
     FACEBOOK_USER_DATA = {
         'email': 'sacherus@gmail.com',

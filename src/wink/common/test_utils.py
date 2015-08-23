@@ -61,7 +61,6 @@ class APITestsBase(TestCase):
 
     def assertAPIValidationErrorHasKey(self, response, key):
         data = loads(response.content)
-        #error_key = 'errors' if 'errors' in data else 'error'
         error_key = 'errors'
         self.assertTrue(key in data[error_key])
 
@@ -103,7 +102,7 @@ class APITestClientLogin(APITestsBase):
         'password': 'password'
     }
 
-    OAUTH2_URL = '/oauth2/token/'
+    OAUTH2_URL = '/tokens/oauth2/token/'
 
     def setUp(self):
         self.app_user, self.app = self.__get_application()
