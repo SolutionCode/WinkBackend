@@ -9,8 +9,8 @@ from requests import HTTPError
 from rest_framework.decorators import api_view
 from rest_framework import status
 from rest_framework.response import Response
-from social.apps.django_app.utils import psa
 from oauth2_provider.views import TokenView
+from tokens.serializers import SocialTokenSerializer
 from tools import get_access_token
 from users.serializers import UserSerializer
 
@@ -37,45 +37,72 @@ class WinkTokenView(TokenView):
         return response
 
 
-def __facebook_login_error():
+def _facebook_login_error():
     return Response({"errors": "invalid facebook token"}, status=status.HTTP_401_UNAUTHORIZED)
 
+# def process_social(f):
+#     def decorated(request, *args, **kwargs):
+#         response = f(request, *args, **kwargs)
+#         print "homo"
+#         return response
+#
+#     return decorated
 
-# When we send a third party access token to that view
-# as a GET request with access_token parameter,
-# python social auth communicate with
-# the third party and request the user info to register or
-# sign in the user. Magic. Yeah.
-@api_view(['GET'])
-@psa('social:complete')
-def register_by_access_token(request, backend, token, *args, **kwargs):
-    try:
-        user = request.backend.do_auth(token)
-        if user:
-            if not user.last_login:
+# @psa()
+# def auth_by_token(request, backend, token):
+#     """Decorator that creates/authenticates a user with an access_token"""
+#     user = request.backend.do_auth(
+#         access_token=request.DATA.get('access_token')
+#     )
+#     if user:
+#         return user
+#     else:
+#         return None
+
+from social.apps.django_app.utils import load_strategy, load_backend
+
+
+@api_view(['POST'])
+def register_by_access_token(request, *args, **kwargs):
+    # TODO: make me pretty, decorator? api_view
+    social_serializer = SocialTokenSerializer(data=request.data)
+    if social_serializer.is_valid():
+        try:
+            data = social_serializer.data
+            strategy = load_strategy(request)
+            backend = load_backend(strategy, data['backend'], None)
+            user = backend.do_auth(data['social_token'])
+            if user:
+                if not user.last_login:
+                    login(request, user)
+                    returned_json = get_access_token(user)
+                    serializer = UserSerializer(user, context={'request': request})
+                    returned_json.update(serializer.data)
+                    return JsonResponse(returned_json)
+                else:
+                    return Response({"errors": "user already registered"}, status=status.HTTP_400_BAD_REQUEST)
+            else:
+                return _facebook_login_error()
+        # TODO: this error contains some valueable information!
+        except HTTPError:
+            return _facebook_login_error()
+
+
+@api_view(['POST'])
+def login_by_access_token(request, *args, **kwargs):
+    # TODO: make me pretty, decorator?
+    social_serializer = SocialTokenSerializer(data=request.data)
+    if social_serializer.is_valid():
+        try:
+            data = social_serializer.data
+            strategy = load_strategy(request)
+            backend = load_backend(strategy, data['backend'], None)
+            user = backend.do_auth(data['social_token'])
+            if user:
                 login(request, user)
                 returned_json = get_access_token(user)
-                serializer = UserSerializer(user, context={'request': request})
-                returned_json.update(serializer.data)
                 return JsonResponse(returned_json)
             else:
-                return Response({"errors": "user already registered"}, status=status.HTTP_400_BAD_REQUEST)
-        else:
-            return __facebook_login_error();
-    except HTTPError:
-        return __facebook_login_error();
-
-
-@api_view(['GET'])
-@psa('social:complete')
-def login_by_access_token(request, backend, token, *args, **kwargs):
-    try:
-        user = request.backend.do_auth(token)
-        if user:
-            login(request, user)
-            returned_json = get_access_token(user)
-            return JsonResponse(returned_json)
-        else:
-            return __facebook_login_error()
-    except HTTPError:
-        return __facebook_login_error()
+                return _facebook_login_error()
+        except HTTPError:
+            return _facebook_login_error()
