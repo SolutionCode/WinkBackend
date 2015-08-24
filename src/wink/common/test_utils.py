@@ -83,9 +83,9 @@ class APITestsBase(TestCase):
     STATUS_CODE_CREATED = 201
     STATUS_CODE_BAD_REQUEST = 400
     STATUS_CODE_UNAUTHORIZED = 401
-    STATUS_CODE_PERMISSION_DENIED = 403
+    STATUS_CODE_FORBIDDEN = 403
     STATUS_CODE_NOT_FOUND = 404
-    STATUS_CODE_METHOD_NOT_SUPPORTED = 405
+    STATUS_CODE_METHOD_NOT_ALLOWED = 405
     STATUS_CODE_VALIDATION_ERROR = 422
     client_class = APITestClient
 
@@ -115,11 +115,12 @@ class APITestsBase(TestCase):
     def assertAPIReturnedUnauthorized(self, response):
         self.assertEquals(response.status_code, self.STATUS_CODE_UNAUTHORIZED)
 
-    def assertAPIReturnedPermissionDenied(self, response):
-        self.assertEquals(response.status_code, self.STATUS_CODE_PERMISSION_DENIED)
+    def assertAPIReturnedForbiddenStatus(self, response):
+        self.assertEquals(response.status_code, self.STATUS_CODE_FORBIDDEN)
 
-    def assertAPIReturnedMethodNotSupportedStatus(self, response):
-        self.assertEquals(response.status_code, self.STATUS_CODE_METHOD_NOT_SUPPORTED)
+    def assertAPIReturnedMethodNotAllowedStatus(self, response):
+        self.assertEquals(response.status_code, self.STATUS_CODE_METHOD_NOT_ALLOWED)
+
 
 
 class APITestClientLogin(APITestsBase):
