@@ -1,5 +1,4 @@
 from django.conf.urls import url
-from django.conf import settings
 
 from tokens import views
 from views import register_by_access_token, login_by_access_token, secret
