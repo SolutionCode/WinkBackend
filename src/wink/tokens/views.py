@@ -7,9 +7,10 @@ from django.utils.decorators import method_decorator
 from django.views.decorators.debug import sensitive_post_parameters
 from django.contrib.auth import login
 from django.http import JsonResponse
-from rest_framework.decorators import api_view
+from rest_framework.decorators import api_view, permission_classes
 from rest_framework import status
 from rest_framework.response import Response
+from rest_framework.permissions import IsAuthenticated
 from oauth2_provider.views import TokenView
 from tokens.tools import get_access_token
 from users.serializers import UserSerializer
@@ -87,3 +88,14 @@ def login_by_access_token(request, *args, **kwargs):
             return _facebook_login_error("after token user is none")
     except HTTPError as e:
         return _facebook_login_error(e.message + " when connecting to " + data['backend'])
+
+
+@api_view(['GET'])
+@permission_classes((IsAuthenticated,))
+def secret(request, *args, **kwargs):
+    '''
+    testing purpuse only
+    :param request:
+    :return:
+    '''
+    return JsonResponse({'status': 'success'})

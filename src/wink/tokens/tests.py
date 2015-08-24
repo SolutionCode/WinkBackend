@@ -40,7 +40,7 @@ class OAuth2UserAPITestCase(APITestClientLogin):
         '''
         it's required to login to get access to secret page
         '''
-        response = self.client.get('/users/secret', follow=True)
+        response = self.client.get('/tokens/secret', follow=True)
         self.assertAPIReturnedUnauthorized(response)
 
     def test_user_can_access_secret(self):
@@ -50,7 +50,7 @@ class OAuth2UserAPITestCase(APITestClientLogin):
         '''
         self.get_valid_user()
         self.login_persistent_with_json(self.VALID_USER_DATA)
-        response = self.client.get('/users/secret', follow=True)
+        response = self.client.get('/tokens/secret', follow=True)
         self.assertEquals(response.data['status'], 'success')
 
 
