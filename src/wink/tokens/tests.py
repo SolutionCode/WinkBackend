@@ -69,8 +69,8 @@ class FacebookTestCase(APITestClientLogin):
 
     FACEBOOK_USER_DATA = {
         'email': 'sacherus@gmail.com',
-        'display_name': '',
-        'username': u'Piotr J\xf3zef Kowenzowski',
+        'display_name': u'Piotr J\xf3zef Kowenzowski',
+        'username': '@piotrjozefkowenzowski',
     }
 
     def setUp(self):

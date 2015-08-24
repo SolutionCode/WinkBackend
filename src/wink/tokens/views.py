@@ -48,7 +48,6 @@ def register_by_access_token(request, *args, **kwargs):
     # TODO: make me pretty, decorator? api_view
     # LD: looks fine :)
     social_serializer = SocialTokenSerializer(data=request.data)
-    # TODO: how DRF behaves on raise exception? it's handling exception correctly...
     social_serializer.is_valid(raise_exception=True)
     try:
         data = social_serializer.data
@@ -63,7 +62,7 @@ def register_by_access_token(request, *args, **kwargs):
                 returned_json.update(serializer.data)
                 return JsonResponse(returned_json)
             else:
-                return Response({"errors": "user already registered"}, status=status.HTTP_400_BAD_REQUEST)
+                return Response({"errors": ["user already registered"]}, status=status.HTTP_400_BAD_REQUEST)
         else:
             return _facebook_login_error("after token user is none")
     except HTTPError as e:
