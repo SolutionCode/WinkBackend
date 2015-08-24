@@ -1,21 +1,24 @@
 import json
 
+from requests import HTTPError
+from social.apps.django_app.utils import load_strategy, load_backend
 from django.http import HttpResponse
 from django.utils.decorators import method_decorator
 from django.views.decorators.debug import sensitive_post_parameters
 from django.contrib.auth import login
 from django.http import JsonResponse
-from requests import HTTPError
 from rest_framework.decorators import api_view
 from rest_framework import status
 from rest_framework.response import Response
 from oauth2_provider.views import TokenView
-from tokens.serializers import SocialTokenSerializer
-from tools import get_access_token
+
+from tokens.tools import get_access_token
 from users.serializers import UserSerializer
+from tokens.serializers import SocialTokenSerializer
 
 
 class WinkTokenView(TokenView):
+
     @method_decorator(sensitive_post_parameters('password'))
     def post(self, request, *args, **kwargs):
         '''
@@ -59,13 +62,14 @@ def _facebook_login_error():
 #     else:
 #         return None
 
-from social.apps.django_app.utils import load_strategy, load_backend
-
 
 @api_view(['POST'])
 def register_by_access_token(request, *args, **kwargs):
     # TODO: make me pretty, decorator? api_view
+    # LD: looks fine :)
     social_serializer = SocialTokenSerializer(data=request.data)
+
+    # LD: what on else?
     if social_serializer.is_valid():
         try:
             data = social_serializer.data

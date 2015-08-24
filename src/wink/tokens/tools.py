@@ -1,6 +1,5 @@
 from django.utils.timezone import now, timedelta
 from django.core.exceptions import ObjectDoesNotExist
-from django.http import JsonResponse
 
 from oauth2_provider.models import AccessToken, Application, RefreshToken
 from oauth2_provider.settings import oauth2_settings
