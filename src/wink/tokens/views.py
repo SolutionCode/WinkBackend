@@ -97,4 +97,4 @@ def secret(request, *args, **kwargs):
     :param request:
     :return:
     '''
-    return JsonResponse({'status': 'success'})
+    return JsonResponse({'status': 'success', 'user': request.user.pk})

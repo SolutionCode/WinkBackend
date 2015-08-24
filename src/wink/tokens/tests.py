@@ -53,6 +53,16 @@ class OAuth2UserAPITestCase(APITestClientLogin):
         response = self.client.get('/tokens/secret', follow=True)
         self.assertEquals(response.data['status'], 'success')
 
+    def test_authenticated_request_has_user(self):
+        '''
+        after successful login user can
+        very useful for testing logging
+        '''
+        user = self.get_valid_user()
+        self.login_persistent_with_json(self.VALID_USER_DATA)
+        response = self.client.get('/tokens/secret', follow=True)
+        self.assertEquals(response.data['user'], user.pk)
+
 
 class FacebookTestCase(APITestClientLogin):
     '''
