@@ -11,4 +11,3 @@ def is_owner(owner_attr=None):
 
             return owner == request.user
     return IsOwnerGeneric
-
