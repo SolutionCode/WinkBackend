@@ -5,7 +5,6 @@ from users.models import User
 # Create your tests here.
 
 class OAuth2UserAPITestCase(APITestClientLogin):
-
     def test_create_application(self):
         '''
         application id and secret should be not empty after calling constructor
@@ -62,13 +61,19 @@ class FacebookTestCase(APITestClientLogin):
     '''
 
     # token should be valid till October 22nd, However facebook can revoke access
-    EXTENDED_FACEBOOK_TOKEN1 = {
-        'backend': 'facebook',
-        'social_token': "CAAUshhSyCnEBAIXwDP2osd01os2pO0bKUoSgdkVxiiaZBdS1KBs8lZBO3ZCNFsWB7RPyTVuY0V6A4NnmeL2e1kYzexukL0TiCK3H3PzW2oSC0SYMYVHorXQIF8DquPipRhzhLJsixEOQNGsUw0clHVIHSByxQ2apuZA7jmB976dzyhK7CvnL6rptiyI7tCYZD}"}
-    EXTENDED_FACEBOOK_TOKEN2 = {
-        'backend': 'facebook',
-        'social_token': "CAAUshhSyCnEBAPaxXFXwG2UaEWuEe6mkkU9o7pXNJZCTlSMP1J5kHEnPL1tSODbLE75jZBlv1mC3c4zrXfewKT7eIi26cqbce1IFv5k7oSGCYYwZCOWMEAoIEYVrQyfo6qs3t2cVDZCCxStCwrU2keQKhVouzKL9RfYlPzD65Dm2JAf8hwxF37FuzWKZBQg4ZD"}
-    INVALID_FACEBOOK_TOKEN = {'backend': 'facebook', 'social_token': "1"}
+
+    # EXTENDED_FACEBOOK_TOKEN1 = {
+    #     'backend': 'facebook',
+    #     'social_token': "CAAUshhSyCnEBAIXwDP2osd01os2pO0bKUoSgdkVxiiaZBdS1KBs8lZBO3ZCNFsWB7RPyTVuY0V6A4NnmeL2e1kYzexukL0TiCK3H3PzW2oSC0SYMYVHorXQIF8DquPipRhzhLJsixEOQNGsUw0clHVIHSByxQ2apuZA7jmB976dzyhK7CvnL6rptiyI7tCYZD}"}
+    # EXTENDED_FACEBOOK_TOKEN2 = {
+    #     'backend': 'facebook',
+    #     'social_token': "CAAUshhSyCnEBAPaxXFXwG2UaEWuEe6mkkU9o7pXNJZCTlSMP1J5kHEnPL1tSODbLE75jZBlv1mC3c4zrXfewKT7eIi26cqbce1IFv5k7oSGCYYwZCOWMEAoIEYVrQyfo6qs3t2cVDZCCxStCwrU2keQKhVouzKL9RfYlPzD65Dm2JAf8hwxF37FuzWKZBQg4ZD"}
+    # INVALID_FACEBOOK_TOKEN = {'backend': 'facebook', 'social_token': "1"}
+
+    EXTENDED_FACEBOOK_TOKEN1 = "CAAUshhSyCnEBAIXwDP2osd01os2pO0bKUoSgdkVxiiaZBdS1KBs8lZBO3ZCNFsWB7RPyTVuY0V6A4NnmeL2e1kYzexukL0TiCK3H3PzW2oSC0SYMYVHorXQIF8DquPipRhzhLJsixEOQNGsUw0clHVIHSByxQ2apuZA7jmB976dzyhK7CvnL6rptiyI7tCYZD"
+    EXTENDED_FACEBOOK_TOKEN2 = "CAAUshhSyCnEBAPaxXFXwG2UaEWuEe6mkkU9o7pXNJZCTlSMP1J5kHEnPL1tSODbLE75jZBlv1mC3c4zrXfewKT7eIi26cqbce1IFv5k7oSGCYYwZCOWMEAoIEYVrQyfo6qs3t2cVDZCCxStCwrU2keQKhVouzKL9RfYlPzD65Dm2JAf8hwxF37FuzWKZBQg4ZD"
+    INVALID_FACEBOOK_TOKEN = "1"
+
     REGISTRATION_URL = "/tokens/social/register/"
     LOGIN_URL = "/tokens/social/login/"
 
@@ -78,10 +83,21 @@ class FacebookTestCase(APITestClientLogin):
         # 'username': 'Piotr Józef Kowenzowski',
     }
 
+    def setUp(self):
+        super(FacebookTestCase, self).setUp()
+        self.EXTENDED_FACEBOOK_TOKEN1 = self.__token2dict(self.EXTENDED_FACEBOOK_TOKEN1)
+        self.EXTENDED_FACEBOOK_TOKEN2 = self.__token2dict(self.EXTENDED_FACEBOOK_TOKEN2)
+        self.INVALID_FACEBOOK_TOKEN = self.__token2dict(self.INVALID_FACEBOOK_TOKEN)
+
+
     def __compare_user2json(self, user, json):
         self.assertEquals(user.display_name, self.FACEBOOK_USER_DATA['email'])
         self.assertEquals(user.email, self.FACEBOOK_USER_DATA['email'])
         self.assertEquals(user.username, self.FACEBOOK_USER_DATA['username'])
+
+    def __token2dict(self, token):
+        return {'backend': 'facebook', 'social_token': token, 'client_id': self.app.client_id,
+                'client_secret': self.app.client_secret}
 
     def test_user_signup(self):
         '''
@@ -121,11 +137,12 @@ class FacebookTestCase(APITestClientLogin):
         application sents invalid token...
         '''
         response = self.client.post(self.REGISTRATION_URL, data=self.INVALID_FACEBOOK_TOKEN)
-        self.assertAPIValidationErrorHasKey(response, "invalid facebook token")
+        print response
+        self.assertAPIValidationErrorHasKey(response, "400 Client Error: Bad Request when connecting to facebook")
 
     def test_app_sent_invalid_token_login(self):
         '''
         application sents invalid token...
         '''
         response = self.client.post(self.LOGIN_URL, data=self.INVALID_FACEBOOK_TOKEN)
-        self.assertAPIValidationErrorHasKey(response, "invalid facebook token")
+        self.assertAPIValidationErrorHasKey(response, "400 Client Error: Bad Request when connecting to facebook")

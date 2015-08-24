@@ -22,13 +22,13 @@ def get_token_json(access_token):
     return token
 
 
-def get_access_token(user):
+def get_access_token(user, app):
     """
     Takes a user instance and return an access_token as a JsonResponse
     instance.
     """
     # our oauth2 app
-    app = Application.objects.get(name="wink-android")
+    # app = Application.objects.get(client_id=client_id)
 
     # We delete the old access_token and refresh_token
     try:
