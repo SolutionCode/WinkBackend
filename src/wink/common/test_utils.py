@@ -36,23 +36,43 @@ def process_response(func):
 class APITestClient(Client):
     token = None
 
-    @process_response
-    def post(self, path, data=None, **kwargs):
+    def _patch_data(self, kwargs):
+        data = kwargs.get('data')
         if isinstance(data, dict):
             data = dumps(data)
+            kwargs['data'] = data
             kwargs['content_type'] = 'application/json'
 
+    def _add_token(self, kwargs):
         if self.token:
             kwargs['HTTP_AUTHORIZATION'] = 'Bearer ' + self.token
 
-        return super(APITestClient, self).post(path, data, **kwargs)
+    @process_response
+    def post(self, *args, **kwargs):
+        self._patch_data(kwargs)
+        self._add_token(kwargs)
+
+        return super(APITestClient, self).post(*args, **kwargs)
 
     @process_response
     def get(self, *args, **kwargs):
-        if self.token:
-            kwargs['HTTP_AUTHORIZATION'] = 'Bearer ' + self.token
+        self._add_token(kwargs)
 
         return super(APITestClient, self).get(*args, **kwargs)
+
+    @process_response
+    def patch(self, *args, **kwargs):
+        self._patch_data(kwargs)
+        self._add_token(kwargs)
+
+        return super(APITestClient, self).patch(*args, **kwargs)
+
+    @process_response
+    def put(self, *args, **kwargs):
+        self._patch_data(kwargs)
+        self._add_token(kwargs)
+
+        return super(APITestClient, self).put(*args, **kwargs)
 
     def set_token(self, token):
         self.token = token
@@ -65,6 +85,7 @@ class APITestsBase(TestCase):
     STATUS_CODE_UNAUTHORIZED = 401
     STATUS_CODE_PERMISSION_DENIED = 403
     STATUS_CODE_NOT_FOUND = 404
+    STATUS_CODE_METHOD_NOT_SUPPORTED = 405
     STATUS_CODE_VALIDATION_ERROR = 422
     client_class = APITestClient
 
@@ -96,6 +117,9 @@ class APITestsBase(TestCase):
 
     def assertAPIReturnedPermissionDenied(self, response):
         self.assertEquals(response.status_code, self.STATUS_CODE_PERMISSION_DENIED)
+
+    def assertAPIReturnedMethodNotSupportedStatus(self, response):
+        self.assertEquals(response.status_code, self.STATUS_CODE_METHOD_NOT_SUPPORTED)
 
 
 class APITestClientLogin(APITestsBase):

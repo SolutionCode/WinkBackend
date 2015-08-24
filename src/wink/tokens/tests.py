@@ -89,7 +89,6 @@ class FacebookTestCase(APITestClientLogin):
         self.EXTENDED_FACEBOOK_TOKEN2 = self.__token2dict(self.EXTENDED_FACEBOOK_TOKEN2)
         self.INVALID_FACEBOOK_TOKEN = self.__token2dict(self.INVALID_FACEBOOK_TOKEN)
 
-
     def __compare_user2json(self, user, json):
         self.assertEquals(user.display_name, self.FACEBOOK_USER_DATA['email'])
         self.assertEquals(user.email, self.FACEBOOK_USER_DATA['email'])
