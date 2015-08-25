@@ -153,3 +153,74 @@ class ListUserPublicAPITestCase(APITestsBase):
         self.assertEquals(data['pagination']['count'], 100)
         self.assertTrue('next' in data['pagination'])
         self.assertTrue('previous' in data['pagination'])
+
+    def test_filtering_by_username(self):
+        user_1 = User.objects.create(username='@username1', email='test+1@example.com')
+        User.objects.create(username='@username2', email='test+2@example.com')
+
+        response = self.client.get('/users/public?username={username}'.format(username=user_1.username), follow=True)
+
+        self.assertAPIReturnedOKStatus(response)
+        data = response.data['data']
+        self.assertEquals(len(data['user_public']), 1)
+        self.assertEquals(data['user_public'][0]['id'], user_1.id)
+
+    def test_search_by_display_name_partial(self):
+        user_1 = User.objects.create(username='@username1', email='test+1@example.com', display_name='Included')
+        User.objects.create(username='@username2', email='test+2@example.com', display_name='Excluded')
+
+        response = self.client.get('/users/public?search={s}'.format(s=user_1.display_name[:-3]), follow=True)
+
+        self.assertAPIReturnedOKStatus(response)
+        data = response.data['data']
+        self.assertEquals(len(data['user_public']), 1)
+        self.assertEquals(data['user_public'][0]['id'], user_1.id)
+
+    def test_search_by_username_partial(self):
+        user_1 = User.objects.create(username='@username1', email='test+1@example.com', display_name='Included')
+        User.objects.create(username='@username2', email='test+2@example.com', display_name='Excluded')
+
+        response = self.client.get('/users/public?search={s}'.format(s=user_1.username[1:]), follow=True)
+
+        self.assertAPIReturnedOKStatus(response)
+        data = response.data['data']
+        self.assertEquals(len(data['user_public']), 1)
+        self.assertEquals(data['user_public'][0]['id'], user_1.id)
+
+    def test_filtering_by_email_ignored(self):
+        user_1 = User.objects.create(username='@username1', email='test+1@example.com')
+        User.objects.create(username='@username2', email='test+2@example.com')
+
+        response = self.client.get('/users/public?email={email}'.format(email=user_1.email), follow=True)
+
+        self.assertAPIReturnedOKStatus(response)
+        data = response.data['data']
+        self.assertEquals(len(data['user_public']), 2)
+
+    def test_sorting_by_display_name(self):
+        user_1 = User.objects.create(username='@username1', email='test+1@example.com', display_name='A')
+        user_2 = User.objects.create(username='@username2', email='test+2@example.com', display_name='C')
+        user_3 = User.objects.create(username='@username3', email='test+3@example.com', display_name='B')
+
+        response = self.client.get('/users/public?ordering=display_name', follow=True)
+
+        self.assertAPIReturnedOKStatus(response)
+        data = response.data['data']
+        self.assertEquals(len(data['user_public']), 3)
+        self.assertEquals(data['user_public'][0]['id'], user_1.id)
+        self.assertEquals(data['user_public'][1]['id'], user_3.id)
+        self.assertEquals(data['user_public'][2]['id'], user_2.id)
+
+    def test_sorting_by_display_name_descending(self):
+        user_1 = User.objects.create(username='@username1', email='test+1@example.com', display_name='A')
+        user_2 = User.objects.create(username='@username2', email='test+2@example.com', display_name='C')
+        user_3 = User.objects.create(username='@username3', email='test+3@example.com', display_name='B')
+
+        response = self.client.get('/users/public?ordering=-display_name', follow=True)
+
+        self.assertAPIReturnedOKStatus(response)
+        data = response.data['data']
+        self.assertEquals(len(data['user_public']), 3)
+        self.assertEquals(data['user_public'][2]['id'], user_1.id)
+        self.assertEquals(data['user_public'][1]['id'], user_3.id)
+        self.assertEquals(data['user_public'][0]['id'], user_2.id)

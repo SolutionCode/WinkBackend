@@ -1,4 +1,5 @@
 from rest_framework import generics
+from rest_framework import filters
 from rest_framework.permissions import IsAuthenticated
 
 from common.permissions import is_owner
@@ -27,3 +28,6 @@ class UserPublicListView(generics.ListAPIView):
     queryset = User.objects.all()
     serializer_class = UserPublicSerializer
     renderer_classes = (JSONRenderer,)
+    filter_backends = (filters.DjangoFilterBackend, filters.SearchFilter, filters.OrderingFilter)
+    filter_fields = ('username',)
+    search_fields = ('display_name', 'username')
