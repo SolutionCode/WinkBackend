@@ -21,3 +21,9 @@ class UserPublicRetrieveUpdateView(generics.RetrieveUpdateAPIView):
     serializer_class = UserPublicSerializer
     http_method_names = ['get', 'options']
     renderer_classes = (JSONRenderer,)
+
+
+class UserPublicListView(generics.ListAPIView):
+    queryset = User.objects.all()
+    serializer_class = UserPublicSerializer
+    renderer_classes = (JSONRenderer,)

@@ -57,6 +57,8 @@ REST_FRAMEWORK = {
         'oauth2_provider.ext.rest_framework.OAuth2Authentication',
     ),
     'EXCEPTION_HANDLER': 'common.rest.exception_handler',
+    'DEFAULT_PAGINATION_CLASS': 'rest_framework.pagination.LimitOffsetPagination',
+    'PAGE_SIZE': 10
 }
 
 OAUTH2_PROVIDER = {

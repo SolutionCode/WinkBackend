@@ -4,6 +4,8 @@ from users.models import User
 
 
 class UserSerializer(HyperlinkedModelSerializer):
+    resource_name = 'user'
+
     class Meta:
         model = User
         fields = (
@@ -16,6 +18,8 @@ class UserSerializer(HyperlinkedModelSerializer):
 
 
 class UserPublicSerializer(HyperlinkedModelSerializer):
+    resource_name = 'user_public'
+
     class Meta:
         model = User
         fields = (

@@ -1,6 +1,4 @@
-from json import loads
-
-from common.test_utils import APITestClientLogin
+from common.test_utils import APITestClientLogin, APITestsBase
 from users.models import User
 
 
@@ -19,7 +17,7 @@ class GetUserAPITestCase(APITestClientLogin):
         response = self.client.get('/users/{pk}'.format(pk=user.pk), follow=True)
 
         self.assertAPIReturnedOKStatus(response)
-        data = response.data['data']
+        data = response.data['data']['user']
         self.assertEquals(data['id'], user.pk)
         self.assertEquals(data['email'], user.email)
         self.assertEquals(data['username'], user.username)
@@ -55,7 +53,7 @@ class GetPublicUserAPITestCase(APITestClientLogin):
         response = self.client.get('/users/{pk}/public'.format(pk=user.pk), follow=True)
 
         self.assertAPIReturnedOKStatus(response)
-        data = response.data['data']
+        data = response.data['data']['user_public']
         self.assertEquals(data['id'], user.pk)
         self.assertEquals(data['username'], user.username)
         self.assertEquals(data['display_name'], user.display_name)
@@ -119,3 +117,39 @@ class UpdateUserAPITestCase(APITestClientLogin):
 
         response = self.client.put('/users/{pk}'.format(pk=user.pk), follow=True)
         self.assertAPIReturnedMethodNotAllowedStatus(response)
+
+
+class ListUserPublicAPITestCase(APITestsBase):
+
+    def test_get_empty_list(self):
+
+        response = self.client.get('/users/public', follow=True)
+
+        self.assertAPIReturnedOKStatus(response)
+        data = response.data['data']
+        self.assertEquals(len(data['user_public']), 0)
+
+    def test_get_list_one_element(self):
+        User.objects.create(username='@username', email='test@example.com')
+
+        response = self.client.get('/users/public', follow=True)
+
+        self.assertAPIReturnedOKStatus(response)
+        data = response.data['data']
+        self.assertEquals(len(data['user_public']), 1)
+
+    def test_pagination(self):
+        for i in range(100):
+            User.objects.create(username='@username' + str(i), email=str(i) + 'test@example.com')
+
+        response = self.client.get('/users/public', follow=True)
+
+        self.assertAPIReturnedOKStatus(response)
+        data = response.data['data']
+        self.assertEquals(len(data['user_public']), 10)
+
+        # check pagination object
+        self.assertTrue('pagination' in data)
+        self.assertEquals(data['pagination']['count'], 100)
+        self.assertTrue('next' in data['pagination'])
+        self.assertTrue('previous' in data['pagination'])
