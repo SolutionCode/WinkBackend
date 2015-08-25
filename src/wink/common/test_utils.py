@@ -20,6 +20,7 @@ def disable(f):
 
     return _decorator
 
+
 def process_response(func):
     @wraps(func)
     def decorated(*args, **kwargs):
@@ -35,6 +36,7 @@ def process_response(func):
 
 class APITestClient(Client):
     token = None
+    auth_header = None
 
     def _patch_data(self, kwargs):
         data = kwargs.get('data')
@@ -47,12 +49,20 @@ class APITestClient(Client):
         if self.token:
             kwargs['HTTP_AUTHORIZATION'] = 'Bearer ' + self.token
 
+    def _add_auth_header(self, kwargs):
+        kwargs['HTTP_AUTHORIZATION'] = 'Basic ' + self.auth_header
+
     @process_response
     def post(self, *args, **kwargs):
         self._patch_data(kwargs)
         self._add_token(kwargs)
 
         return super(APITestClient, self).post(*args, **kwargs)
+
+    @process_response
+    def post_with_auth_header(self, *args, **kwargs):
+        self._add_auth_header(kwargs)
+        return self.post(*args, **kwargs)
 
     @process_response
     def get(self, *args, **kwargs):
@@ -76,6 +86,9 @@ class APITestClient(Client):
 
     def set_token(self, token):
         self.token = token
+
+    def set_auth_header(self, auth_header):
+        self.auth_header = auth_header
 
 
 class APITestsBase(TestCase):
@@ -122,7 +135,6 @@ class APITestsBase(TestCase):
         self.assertEquals(response.status_code, self.STATUS_CODE_METHOD_NOT_ALLOWED)
 
 
-
 class APITestClientLogin(APITestsBase):
     APP_USER_DATA = {
         'email': 'app@app.com',
@@ -142,6 +154,7 @@ class APITestClientLogin(APITestsBase):
 
     def setUp(self):
         self.app_user, self.app = self.__get_application()
+        self.client.set_auth_header(self.__get_auth_header_value(self.app))
 
     def __get_application(self):
         user = User.objects.create_user(**self.APP_USER_DATA)
@@ -151,13 +164,8 @@ class APITestClientLogin(APITestsBase):
                                          name='wink-android')
         return user, app
 
-    def __get_auth_header(self, app):
-        return self.__get_auth_headers_raw(app.client_id, app.client_secret)
-
-    def __get_auth_headers_raw(self, id, secret):
-        return {
-            'HTTP_AUTHORIZATION': 'Basic ' + base64.b64encode(id + ':' + secret),
-        }
+    def __get_auth_header_value(self, app):
+        return base64.b64encode(app.client_id + ':' + app.client_secret)
 
     def __user_data2auth_data(self, user_data):
         return {'grant_type': 'password', 'username': user_data['email'], 'password': user_data['password']}
@@ -167,7 +175,7 @@ class APITestClientLogin(APITestsBase):
 
     def login(self, user_data):
         data = self.__user_data2auth_data(user_data)
-        return self.client.post(self.OAUTH2_URL, data=data, **self.__get_auth_header(self.app))
+        return self.client.post_with_auth_header(self.OAUTH2_URL, data=data)
 
     def login_persistent_with_json(self, user_data):
         response = self.login(user_data)

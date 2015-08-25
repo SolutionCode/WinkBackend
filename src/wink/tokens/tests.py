@@ -95,14 +95,13 @@ class FacebookTestCase(APITestClientLogin):
         self.assertEquals(user.username, data['username'])
 
     def __token2dict(self, token):
-        return {'backend': 'facebook', 'social_token': token, 'client_id': self.app.client_id,
-                'client_secret': self.app.client_secret}
+        return {'backend': 'facebook', 'social_token': token}
 
     def test_user_signup_db(self):
         '''
         sent token and check if user is registered in database
         '''
-        response = self.client.post(self.REGISTRATION_URL, data=self.EXTENDED_FACEBOOK_TOKEN1)
+        response = self.client.post_with_auth_header(self.REGISTRATION_URL, data=self.EXTENDED_FACEBOOK_TOKEN1)
         user = User.objects.get(pk=2)
         self.__compare_user2json(user, self.FACEBOOK_USER_DATA)
         self.check_valid_token(response.data)
@@ -111,47 +110,48 @@ class FacebookTestCase(APITestClientLogin):
         '''
         sent token and check if user is returned
         '''
-        response = self.client.post(self.LOGIN_URL, data=self.EXTENDED_FACEBOOK_TOKEN1)
+        response = self.client.post_with_auth_header(self.LOGIN_URL, data=self.EXTENDED_FACEBOOK_TOKEN1)
         self.check_valid_token(response.data)
 
     def test_user_signup_and_signin(self):
         '''
         sent token, register, and then login using different token, pretty simple? :)
         '''
-        response = self.client.post(self.REGISTRATION_URL, data=self.EXTENDED_FACEBOOK_TOKEN1)
+        response = self.client.post_with_auth_header(self.REGISTRATION_URL, data=self.EXTENDED_FACEBOOK_TOKEN1)
         self.check_valid_token(response.data)
-        response = self.client.post(self.LOGIN_URL, data=self.EXTENDED_FACEBOOK_TOKEN1)
+        response = self.client.post_with_auth_header(self.LOGIN_URL, data=self.EXTENDED_FACEBOOK_TOKEN1)
         self.check_valid_token(response.data)
 
     def test_user_signup_response(self):
         '''
         sent token, register, and then login using different token, pretty simple? :)
         '''
-        response = self.client.post(self.REGISTRATION_URL, data=self.EXTENDED_FACEBOOK_TOKEN1)
+        response = self.client.post_with_auth_header(self.REGISTRATION_URL, data=self.EXTENDED_FACEBOOK_TOKEN1)
         self.check_valid_token(response.data)
         facebook_set = set(self.FACEBOOK_USER_DATA.items())
         response_set = set(response.data.items())
-        self.assertTrue(facebook_set.issubset(response_set), "Got real data from facebook in response after registration")
+        self.assertTrue(facebook_set.issubset(response_set),
+                        "Got real data from facebook in response after registration")
 
     def test_user_signup_twice(self):
         '''
         sent token, register, and then login using different token, pretty simple? :)
         '''
-        response = self.client.post(self.REGISTRATION_URL, data=self.EXTENDED_FACEBOOK_TOKEN1)
+        response = self.client.post_with_auth_header(self.REGISTRATION_URL, data=self.EXTENDED_FACEBOOK_TOKEN1)
         self.check_valid_token(response.data)
-        response = self.client.post(self.REGISTRATION_URL, data=self.EXTENDED_FACEBOOK_TOKEN1)
+        response = self.client.post_with_auth_header(self.REGISTRATION_URL, data=self.EXTENDED_FACEBOOK_TOKEN1)
         self.assertAPIValidationErrorHasKey(response, "user already registered")
 
     def test_app_sent_invalid_token_registration(self):
         '''
         application sents invalid token...
         '''
-        response = self.client.post(self.REGISTRATION_URL, data=self.INVALID_FACEBOOK_TOKEN)
+        response = self.client.post_with_auth_header(self.REGISTRATION_URL, data=self.INVALID_FACEBOOK_TOKEN)
         self.assertAPIValidationErrorHasKey(response, "400 Client Error: Bad Request when connecting to facebook")
 
     def test_app_sent_invalid_token_login(self):
         '''
         application sents invalid token...
         '''
-        response = self.client.post(self.LOGIN_URL, data=self.INVALID_FACEBOOK_TOKEN)
+        response = self.client.post_with_auth_header(self.LOGIN_URL, data=self.INVALID_FACEBOOK_TOKEN)
         self.assertAPIValidationErrorHasKey(response, "400 Client Error: Bad Request when connecting to facebook")

@@ -1,5 +1,10 @@
+import base64
 import json
+import binascii
+from urllib import unquote_plus
 
+from django.core.exceptions import ObjectDoesNotExist
+from oauth2_provider.models import Application
 from requests import HTTPError
 from social.apps.django_app.utils import load_strategy, load_backend
 from django.http import HttpResponse
@@ -43,13 +48,41 @@ def _facebook_login_error(message):
     return Response({"errors": [message]}, status=status.HTTP_401_UNAUTHORIZED)
 
 
+def _get_client_id_and_secret(request):
+    auth_string = request.META['HTTP_AUTHORIZATION'].split()[1]
+    encoding = 'utf-8'
+    try:
+        b64_decoded = base64.b64decode(auth_string)
+    except (TypeError, binascii.Error):
+        print ("Failed basic auth: %s can't be decoded as base64", auth_string)
+        return False
+
+    try:
+        auth_string_decoded = b64_decoded.decode(encoding)
+    except UnicodeDecodeError:
+        print ("Failed basic auth: %s can't be decoded as unicode by %s",
+               auth_string,
+               encoding)
+        return False
+
+    client_id, client_secret = map(unquote_plus, auth_string_decoded.split(':', 1))
+    return client_id, client_secret
+
+
 @api_view(['POST'])
 def register_by_access_token(request, *args, **kwargs):
     # TODO: make me pretty, decorator? api_view
     # LD: looks fine :)
+    # print request.META
     social_serializer = SocialTokenSerializer(data=request.data)
     social_serializer.is_valid(raise_exception=True)
     try:
+        # TODO: this is really bad!
+        client_id, client_secret = _get_client_id_and_secret(request)
+        try:
+            app = Application.objects.get(client_id=client_id)
+        except ObjectDoesNotExist:
+            return Response({"errors": ["client_id doesn't exist"]}, status=status.HTTP_400_BAD_REQUEST)
         data = social_serializer.data
         strategy = load_strategy(request)
         backend = load_backend(strategy, data['backend'], None)
@@ -57,7 +90,7 @@ def register_by_access_token(request, *args, **kwargs):
         if user:
             if not user.last_login:
                 login(request, user)
-                returned_json = get_access_token(user, social_serializer.app)
+                returned_json = get_access_token(user, app)
                 serializer = UserSerializer(user, context={'request': request})
                 returned_json.update(serializer.data)
                 return JsonResponse(returned_json)
@@ -75,13 +108,19 @@ def login_by_access_token(request, *args, **kwargs):
     social_serializer = SocialTokenSerializer(data=request.data)
     social_serializer.is_valid(raise_exception=True)
     try:
+        # TODO: this is really bad!
+        client_id, client_secret = _get_client_id_and_secret(request)
+        try:
+            app = Application.objects.get(client_id=client_id)
+        except ObjectDoesNotExist:
+            return Response({"errors": ["client_id doesn't exist"]}, status=status.HTTP_400_BAD_REQUEST)
         data = social_serializer.data
         strategy = load_strategy(request)
         backend = load_backend(strategy, data['backend'], None)
         user = backend.do_auth(data['social_token'])
         if user:
             login(request, user)
-            returned_json = get_access_token(user, social_serializer.app)
+            returned_json = get_access_token(user, app)
             return JsonResponse(returned_json)
         else:
             return _facebook_login_error("after token user is none")
