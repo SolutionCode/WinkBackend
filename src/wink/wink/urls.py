@@ -21,5 +21,4 @@ urlpatterns = [
     url(r'^admin/', include(admin.site.urls)),
     url(r'^users/', include('users.urls')),
     url(r'^tokens/', include('tokens.urls')),
-    url(r'^tokens/oauth2/', include('oauth2_provider.urls', namespace='oauth2_provider')),
 ]

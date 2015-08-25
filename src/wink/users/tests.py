@@ -177,12 +177,10 @@ class QueryListUserPublicAPITestCase(APITestsBase):
     def test_search_by_display_name_beyond_ascii(self):
         user_1 = User.objects.create(username='@username1', email='test+1@example.com',
                                      display_name=u'J\xf3zef Kowenzowski')
-        print user_1.display_name[:-3]
         User.objects.create(username='@username2', email='test+2@example.com', display_name='Excluded')
 
         response = self.client.get('/users/public?search={s}'.format(s=user_1.display_name[:-3].encode('utf-8')),
                                    follow=True)
-        print '/users/public?search={s}'.format(s=user_1.display_name[:-3].encode('utf-8'))
 
         self.assertAPIReturnedOKStatus(response)
         data = response.data['data']
