@@ -12,10 +12,10 @@ class SocialTokenSerializer(serializers.Serializer):
 
     backend = serializers.CharField(max_length=200)
     social_token = serializers.CharField(max_length=255)
-    client_id = serializers.CharField(max_length=200)
+    # client_id = serializers.CharField(max_length=200)
     # client_secret = serializers.CharField(max_length=200)
     # save some queries to DB
-    app = None
+    # app = None
 
     def validate_backend(self, value):
         """
@@ -25,12 +25,12 @@ class SocialTokenSerializer(serializers.Serializer):
             raise serializers.ValidationError("Allowed backends: " + str(self.ALLOWED_BACKENDS))
         return value
 
-    def validate_client_id(self, value):
-        """
-        Check client id exists in database
-        """
-        try:
-            self.app = Application.objects.get(client_id=value)
-        except ObjectDoesNotExist:
-            raise serializers.ValidationError("Application with id " + value + " doest not exist in DB")
-        return value
+    # def validate_client_id(self, value):
+    #     """
+    #     Check client id exists in database
+    #     """
+    #     try:
+    #         self.app = Application.objects.get(client_id=value)
+    #     except ObjectDoesNotExist:
+    #         raise serializers.ValidationError("Application with id " + value + " doest not exist in DB")
+    #     return value
