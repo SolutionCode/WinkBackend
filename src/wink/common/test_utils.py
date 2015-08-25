@@ -8,19 +8,6 @@ from oauth2_provider.models import Application
 from users.models import User
 
 
-def disable(f):
-    '''
-    can disable function for testing
-    :param f:
-    :return:
-    '''
-
-    def _decorator(self):
-        print self.f.__name__ + ' has been disabled'
-
-    return _decorator
-
-
 def process_response(func):
     @wraps(func)
     def decorated(*args, **kwargs):

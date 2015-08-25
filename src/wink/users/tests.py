@@ -42,7 +42,6 @@ class GetUserAPITestCase(APITestClientLogin):
 
 
 class GetPublicUserAPITestCase(APITestClientLogin):
-
     def test_get_non_existing_user(self):
         response = self.client.get('/users/0/public', follow=True)
 
@@ -120,9 +119,7 @@ class UpdateUserAPITestCase(APITestClientLogin):
 
 
 class ListUserPublicAPITestCase(APITestsBase):
-
     def test_get_empty_list(self):
-
         response = self.client.get('/users/public', follow=True)
 
         self.assertAPIReturnedOKStatus(response)
@@ -154,12 +151,13 @@ class ListUserPublicAPITestCase(APITestsBase):
         self.assertTrue('next' in data['pagination'])
         self.assertTrue('previous' in data['pagination'])
 
+
+class QueryListUserPublicAPITestCase(APITestsBase):
     def test_filtering_by_username(self):
         user_1 = User.objects.create(username='@username1', email='test+1@example.com')
         User.objects.create(username='@username2', email='test+2@example.com')
 
         response = self.client.get('/users/public?username={username}'.format(username=user_1.username), follow=True)
-
         self.assertAPIReturnedOKStatus(response)
         data = response.data['data']
         self.assertEquals(len(data['user_public']), 1)
@@ -170,6 +168,21 @@ class ListUserPublicAPITestCase(APITestsBase):
         User.objects.create(username='@username2', email='test+2@example.com', display_name='Excluded')
 
         response = self.client.get('/users/public?search={s}'.format(s=user_1.display_name[:-3]), follow=True)
+
+        self.assertAPIReturnedOKStatus(response)
+        data = response.data['data']
+        self.assertEquals(len(data['user_public']), 1)
+        self.assertEquals(data['user_public'][0]['id'], user_1.id)
+
+    def test_search_by_display_name_beyond_ascii(self):
+        user_1 = User.objects.create(username='@username1', email='test+1@example.com',
+                                     display_name=u'J\xf3zef Kowenzowski')
+        print user_1.display_name[:-3]
+        User.objects.create(username='@username2', email='test+2@example.com', display_name='Excluded')
+
+        response = self.client.get('/users/public?search={s}'.format(s=user_1.display_name[:-3].encode('utf-8')),
+                                   follow=True)
+        print '/users/public?search={s}'.format(s=user_1.display_name[:-3].encode('utf-8'))
 
         self.assertAPIReturnedOKStatus(response)
         data = response.data['data']
