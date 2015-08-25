@@ -1,7 +1,4 @@
 from rest_framework.serializers import HyperlinkedModelSerializer
-from rest_framework import generics
-from rest_framework.serializers import ValidationError
-# from permissions import IsAuthenticatedOrCreate
 
 from users.models import User
 
@@ -13,6 +10,17 @@ class UserSerializer(HyperlinkedModelSerializer):
             'id',
             'url',
             'email',
+            'display_name',
+            'username'
+        )
+
+
+class UserPublicSerializer(HyperlinkedModelSerializer):
+    class Meta:
+        model = User
+        fields = (
+            'id',
+            'url',
             'display_name',
             'username'
         )

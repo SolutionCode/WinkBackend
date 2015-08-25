@@ -90,10 +90,12 @@ def register_by_access_token(request, *args, **kwargs):
         if user:
             if not user.last_login:
                 login(request, user)
-                returned_json = get_access_token(user, app)
                 serializer = UserSerializer(user, context={'request': request})
-                returned_json.update(serializer.data)
-                return JsonResponse(returned_json)
+                returned_json = {
+                    'user': serializer.data,
+                    'token': get_access_token(user, app)
+                }
+                return JsonResponse({'data': returned_json})
             else:
                 return Response({"errors": ["user already registered"]}, status=status.HTTP_400_BAD_REQUEST)
         else:
@@ -120,8 +122,10 @@ def login_by_access_token(request, *args, **kwargs):
         user = backend.do_auth(data['social_token'])
         if user:
             login(request, user)
-            returned_json = get_access_token(user, app)
-            return JsonResponse(returned_json)
+            returned_json = {
+                'token': get_access_token(user, app)
+            }
+            return JsonResponse({'data': returned_json})
         else:
             return _facebook_login_error("after token user is none")
     except HTTPError as e:

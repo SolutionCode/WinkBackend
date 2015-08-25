@@ -185,6 +185,7 @@ class APITestClientLogin(APITestsBase):
         self.client.set_token(data['access_token'])
 
     def check_valid_token(self, data):
+        data = data['data']['token']
         self.assertAPIReturnedKey(data, 'token_type', 'Bearer')
         self.assertIsNotNone(data['access_token'])
         self.assertIsNotNone(data['refresh_token'])

@@ -19,6 +19,7 @@ def get_token_json(access_token):
         'refresh_token': access_token.refresh_token.token,
         'scope': access_token.scope
     }
+
     return token
 
 

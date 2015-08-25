@@ -129,7 +129,7 @@ class FacebookTestCase(APITestClientLogin):
         response = self.client.post_with_auth_header(self.REGISTRATION_URL, data=self.EXTENDED_FACEBOOK_TOKEN1)
         self.check_valid_token(response.data)
         facebook_set = set(self.FACEBOOK_USER_DATA.items())
-        response_set = set(response.data.items())
+        response_set = set(response.data['data']['user'].items())
         self.assertTrue(facebook_set.issubset(response_set),
                         "Got real data from facebook in response after registration")
 

@@ -1,3 +1,5 @@
+from json import loads
+
 from common.test_utils import APITestClientLogin
 from users.models import User
 
@@ -17,9 +19,11 @@ class GetUserAPITestCase(APITestClientLogin):
         response = self.client.get('/users/{pk}'.format(pk=user.pk), follow=True)
 
         self.assertAPIReturnedOKStatus(response)
-        data = response.data
+        data = response.data['data']
         self.assertEquals(data['id'], user.pk)
         self.assertEquals(data['email'], user.email)
+        self.assertEquals(data['username'], user.username)
+        self.assertEquals(data['display_name'], user.display_name)
 
     def test_get_user_not_authorized(self):
         user = self.get_valid_user()
@@ -37,6 +41,25 @@ class GetUserAPITestCase(APITestClientLogin):
         response = self.client.get('/users/{pk}'.format(pk=other_user.pk), follow=True)
 
         self.assertAPIReturnedForbiddenStatus(response)
+
+
+class GetPublicUserAPITestCase(APITestClientLogin):
+
+    def test_get_non_existing_user(self):
+        response = self.client.get('/users/0/public', follow=True)
+
+        self.assertAPIReturnedNotFoundStatus(response)
+
+    def test_get_existing_user(self):
+        user = self.get_valid_user()
+        response = self.client.get('/users/{pk}/public'.format(pk=user.pk), follow=True)
+
+        self.assertAPIReturnedOKStatus(response)
+        data = response.data['data']
+        self.assertEquals(data['id'], user.pk)
+        self.assertEquals(data['username'], user.username)
+        self.assertEquals(data['display_name'], user.display_name)
+        self.assertFalse('email' in data)
 
 
 class UpdateUserAPITestCase(APITestClientLogin):
