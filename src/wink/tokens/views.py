@@ -7,7 +7,6 @@ from django.core.exceptions import ObjectDoesNotExist
 from oauth2_provider.models import Application
 from requests import HTTPError
 from social.apps.django_app.utils import load_strategy, load_backend
-from django.http import HttpResponse
 from django.utils.decorators import method_decorator
 from django.views.decorators.debug import sensitive_post_parameters
 from django.contrib.auth import login
@@ -16,10 +15,18 @@ from rest_framework.decorators import api_view, permission_classes
 from rest_framework import status
 from rest_framework.response import Response
 from rest_framework.permissions import IsAuthenticated
-from oauth2_provider.views import TokenView
+from oauth2_provider.views import TokenView, RevokeTokenView
 from tokens.tools import get_access_token
 from users.serializers import UserSerializer
 from tokens.serializers import SocialTokenSerializer
+
+
+def fix_error2errors_in_oauth(response):
+    d = json.loads(response.content)
+    if 'error' in d:
+        d = {'errors': [d['error']]}
+    response.content = json.dumps(d)
+    return response
 
 
 class WinkTokenView(TokenView):
@@ -27,21 +34,19 @@ class WinkTokenView(TokenView):
     def post(self, request, *args, **kwargs):
         '''
         extended OAuth token view, because error should be changed to errors
-        :param request:
-        :param args:
-        :param kwargs:
-        :return:
         '''
-        url, headers, body, status = self.create_token_response(request)
-        d = json.loads(body)
-        if 'error' in d:
-            d['errors'] = d['error']
-            del d['error']
-        body = json.dumps(d)
-        response = HttpResponse(content=body, status=status)
-        for k, v in headers.items():
-            response[k] = v
-        return response
+        response = super(WinkTokenView, self).post(request, *args, **kwargs)
+        return fix_error2errors_in_oauth(response)
+
+
+class WinkRevokeTokenView(RevokeTokenView):
+    """
+    Implements an endpoint to revoke access or refresh tokens
+    """
+
+    def post(self, request, *args, **kwargs):
+        response = super(WinkRevokeTokenView, self).post(request, *args, **kwargs)
+        return fix_error2errors_in_oauth(response)
 
 
 def _facebook_login_error(message):
