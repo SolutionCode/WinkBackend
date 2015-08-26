@@ -1,6 +1,8 @@
 from django.conf.urls import include, url
-from . import views
+
+from friends import views
 
 urlpatterns = [
-    url(r'^$', views.Friends.as_view())
+    url(r'^$', views.Friends.as_view()),
+    url(r'^/login$', views.login_user)
 ]

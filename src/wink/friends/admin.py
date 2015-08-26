@@ -1,6 +1,7 @@
 from django.contrib import admin
-from .models import Friend
-# Register your models here.
+
+from friends.models import Friend
+
 
 class FriendAdmin(admin.ModelAdmin):
     list_display = ('user_id', 'friend_id', 'date_added')
