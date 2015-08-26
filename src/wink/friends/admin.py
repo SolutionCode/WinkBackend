@@ -4,10 +4,11 @@ from friends.models import Friend
 
 
 class FriendAdmin(admin.ModelAdmin):
-    list_display = ('user_id', 'friend_id', 'date_added')
+    list_display = ('user', 'friend', 'date_added')
     search_fields = \
-        ['user_id__username', 'friend_id__username',
-         'user_id__first_name', 'friend_id__first_name',
-         'user_id__last_name', 'friend_id__last_name',
-         'user_id__email', 'friend_id__email']
+        ['user__username', 'friend__username',
+         'user__first_name', 'friend__first_name',
+         'user__last_name', 'friend__last_name',
+         'user__email', 'friend__email']
+
 admin.site.register(Friend, FriendAdmin)

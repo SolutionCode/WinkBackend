@@ -1,14 +1,13 @@
 import re
 
 from django.contrib.auth.models import User
-from django.contrib.auth import authenticate, login
-from django.http import HttpResponse
 from django.core.paginator import Paginator, EmptyPage, PageNotAnInteger
 
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
 from helpers.errors import Error, ErrorType
+from helpers.authentication import check_authorization
 from friends.serializers import FriendOnlyFriendsSerializer
 from friends.models import Friend
 
@@ -20,7 +19,8 @@ class Friends(APIView):
 
     def get(self, request):
         #Checking if user is authorized
-        error = self.check_authorization(request)
+        error = check_authorization(request)
+        print request.user.id
         if error is not None:
             return error
 
@@ -60,7 +60,7 @@ class Friends(APIView):
 
     def post(self, request):
         #Checking if user is authorized
-        error = self.check_authorization(request)
+        error = check_authorization(request)
         if error is not None:
             return error
 
@@ -87,12 +87,7 @@ class Friends(APIView):
         error = Error(ErrorType.bad_request)
         return Response(data = error.__dict__, status = 400)
 
-    def check_authorization(self, request):
-        if request.user.is_anonymous():
-            error = Error(ErrorType.unauthorized)
-            return Response(data=error.__dict__,status=401)
-        else:
-            return None
+
 
     def add_friend(user, friend):
         friend_entry = Friend()
@@ -117,9 +112,3 @@ class Friends(APIView):
 
         return sorting_command
 
-
-
-def login_user(request):
-    user = authenticate(username='Aaa', password='Aaa')
-    login(request, user)
-    return HttpResponse('Zalogowano')

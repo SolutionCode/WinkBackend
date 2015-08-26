@@ -44,7 +44,8 @@ INSTALLED_APPS = (
     'users',
     'friends',
     'chats',
-    'tokens'
+    'tokens',
+    'messages'
 )
 
 MIDDLEWARE_CLASSES = (
