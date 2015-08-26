@@ -43,12 +43,17 @@ class GetUserAPITestCase(APITestClientLogin):
 
 class GetPublicUserAPITestCase(APITestClientLogin):
     def test_get_non_existing_user(self):
+        user = self.get_valid_user()
+        self.login_persistent_with_json(self.VALID_USER_DATA)
+
         response = self.client.get('/users/0/public', follow=True)
 
         self.assertAPIReturnedNotFoundStatus(response)
 
     def test_get_existing_user(self):
         user = self.get_valid_user()
+        self.login_persistent_with_json(self.VALID_USER_DATA)
+
         response = self.client.get('/users/{pk}/public'.format(pk=user.pk), follow=True)
 
         self.assertAPIReturnedOKStatus(response)
@@ -57,6 +62,12 @@ class GetPublicUserAPITestCase(APITestClientLogin):
         self.assertEquals(data['username'], user.username)
         self.assertEquals(data['display_name'], user.display_name)
         self.assertFalse('email' in data)
+
+    def test_unauthorized(self):
+        user = self.get_valid_user()
+        response = self.client.get('/users/{pk}/public'.format(pk=user.pk), follow=True)
+
+        self.assertAPIReturnedUnauthorized(response)
 
 
 class UpdateUserAPITestCase(APITestClientLogin):
@@ -118,24 +129,24 @@ class UpdateUserAPITestCase(APITestClientLogin):
         self.assertAPIReturnedMethodNotAllowedStatus(response)
 
 
-class ListUserPublicAPITestCase(APITestsBase):
-    def test_get_empty_list(self):
-        response = self.client.get('/users/public', follow=True)
-
-        self.assertAPIReturnedOKStatus(response)
-        data = response.data['data']
-        self.assertEquals(len(data['user_public']), 0)
+class ListUserPublicAPITestCase(APITestClientLogin):
 
     def test_get_list_one_element(self):
-        User.objects.create(username='@username', email='test@example.com')
+        user = self.get_valid_user()
+        self.login_persistent_with_json(self.VALID_USER_DATA)
+        users_already = User.objects.count()
 
         response = self.client.get('/users/public', follow=True)
 
         self.assertAPIReturnedOKStatus(response)
         data = response.data['data']
-        self.assertEquals(len(data['user_public']), 1)
+        self.assertEquals(len(data['user_public']), users_already)
 
     def test_pagination(self):
+        user = self.get_valid_user()
+        self.login_persistent_with_json(self.VALID_USER_DATA)
+        users_already = User.objects.count()
+
         for i in range(100):
             User.objects.create(username='@username' + str(i), email=str(i) + 'test@example.com')
 
@@ -147,13 +158,14 @@ class ListUserPublicAPITestCase(APITestsBase):
 
         # check pagination object
         self.assertTrue('pagination' in data)
-        self.assertEquals(data['pagination']['count'], 100)
+        self.assertEquals(data['pagination']['count'], 100 + users_already)
         self.assertTrue('next' in data['pagination'])
         self.assertTrue('previous' in data['pagination'])
 
-
-class QueryListUserPublicAPITestCase(APITestsBase):
     def test_filtering_by_username(self):
+        user = self.get_valid_user()
+        self.login_persistent_with_json(self.VALID_USER_DATA)
+
         user_1 = User.objects.create(username='@username1', email='test+1@example.com')
         User.objects.create(username='@username2', email='test+2@example.com')
 
@@ -164,6 +176,9 @@ class QueryListUserPublicAPITestCase(APITestsBase):
         self.assertEquals(data['user_public'][0]['id'], user_1.id)
 
     def test_search_by_display_name_partial(self):
+        user = self.get_valid_user()
+        self.login_persistent_with_json(self.VALID_USER_DATA)
+
         user_1 = User.objects.create(username='@username1', email='test+1@example.com', display_name='Included')
         User.objects.create(username='@username2', email='test+2@example.com', display_name='Excluded')
 
@@ -175,6 +190,9 @@ class QueryListUserPublicAPITestCase(APITestsBase):
         self.assertEquals(data['user_public'][0]['id'], user_1.id)
 
     def test_search_by_display_name_beyond_ascii(self):
+        user = self.get_valid_user()
+        self.login_persistent_with_json(self.VALID_USER_DATA)
+
         user_1 = User.objects.create(username='@username1', email='test+1@example.com',
                                      display_name=u'J\xf3zef Kowenzowski')
         User.objects.create(username='@username2', email='test+2@example.com', display_name='Excluded')
@@ -188,6 +206,9 @@ class QueryListUserPublicAPITestCase(APITestsBase):
         self.assertEquals(data['user_public'][0]['id'], user_1.id)
 
     def test_search_by_username_partial(self):
+        user = self.get_valid_user()
+        self.login_persistent_with_json(self.VALID_USER_DATA)
+
         user_1 = User.objects.create(username='@username1', email='test+1@example.com', display_name='Included')
         User.objects.create(username='@username2', email='test+2@example.com', display_name='Excluded')
 
@@ -199,6 +220,9 @@ class QueryListUserPublicAPITestCase(APITestsBase):
         self.assertEquals(data['user_public'][0]['id'], user_1.id)
 
     def test_filtering_by_email_ignored(self):
+        user = self.get_valid_user()
+        self.login_persistent_with_json(self.VALID_USER_DATA)
+
         user_1 = User.objects.create(username='@username1', email='test+1@example.com')
         User.objects.create(username='@username2', email='test+2@example.com')
 
@@ -206,14 +230,17 @@ class QueryListUserPublicAPITestCase(APITestsBase):
 
         self.assertAPIReturnedOKStatus(response)
         data = response.data['data']
-        self.assertEquals(len(data['user_public']), 2)
+        self.assertEquals(len(data['user_public']), 4)
 
     def test_sorting_by_display_name(self):
-        user_1 = User.objects.create(username='@username1', email='test+1@example.com', display_name='A')
-        user_2 = User.objects.create(username='@username2', email='test+2@example.com', display_name='C')
-        user_3 = User.objects.create(username='@username3', email='test+3@example.com', display_name='B')
+        user = self.get_valid_user()
+        self.login_persistent_with_json(self.VALID_USER_DATA)
 
-        response = self.client.get('/users/public?ordering=display_name', follow=True)
+        user_1 = User.objects.create(username='@filter1', email='test+1@example.com', display_name='A')
+        user_2 = User.objects.create(username='@filter2', email='test+2@example.com', display_name='C')
+        user_3 = User.objects.create(username='@filter3', email='test+3@example.com', display_name='B')
+
+        response = self.client.get('/users/public?ordering=display_name&search=filter', follow=True)
 
         self.assertAPIReturnedOKStatus(response)
         data = response.data['data']
@@ -223,11 +250,14 @@ class QueryListUserPublicAPITestCase(APITestsBase):
         self.assertEquals(data['user_public'][2]['id'], user_2.id)
 
     def test_sorting_by_display_name_descending(self):
-        user_1 = User.objects.create(username='@username1', email='test+1@example.com', display_name='A')
-        user_2 = User.objects.create(username='@username2', email='test+2@example.com', display_name='C')
-        user_3 = User.objects.create(username='@username3', email='test+3@example.com', display_name='B')
+        user = self.get_valid_user()
+        self.login_persistent_with_json(self.VALID_USER_DATA)
 
-        response = self.client.get('/users/public?ordering=-display_name', follow=True)
+        user_1 = User.objects.create(username='@filter1', email='test+1@example.com', display_name='A')
+        user_2 = User.objects.create(username='@filter2', email='test+2@example.com', display_name='C')
+        user_3 = User.objects.create(username='@filter3', email='test+3@example.com', display_name='B')
+
+        response = self.client.get('/users/public?ordering=-display_name&search=filter', follow=True)
 
         self.assertAPIReturnedOKStatus(response)
         data = response.data['data']
@@ -235,3 +265,8 @@ class QueryListUserPublicAPITestCase(APITestsBase):
         self.assertEquals(data['user_public'][2]['id'], user_1.id)
         self.assertEquals(data['user_public'][1]['id'], user_3.id)
         self.assertEquals(data['user_public'][0]['id'], user_2.id)
+
+    def test_unauthorized(self):
+        response = self.client.get('/users/public')
+
+        self.assertAPIReturnedUnauthorized(response)

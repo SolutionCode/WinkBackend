@@ -17,11 +17,13 @@ class UserRetrieveUpdateView(generics.RetrieveUpdateAPIView):
     permission_classes = (IsAuthenticated, is_owner())
 
 
-class UserPublicRetrieveUpdateView(generics.RetrieveUpdateAPIView):
+class UserPublicRetrieveUpdateView(generics.RetrieveAPIView):
     queryset = User.objects.all()
     serializer_class = UserPublicSerializer
     http_method_names = ['get', 'options']
     renderer_classes = (JSONRenderer,)
+
+    permission_classes = (IsAuthenticated,)
 
 
 class UserPublicListView(generics.ListAPIView):
@@ -31,3 +33,5 @@ class UserPublicListView(generics.ListAPIView):
     filter_backends = (filters.DjangoFilterBackend, filters.SearchFilter, filters.OrderingFilter)
     filter_fields = ('username',)
     search_fields = ('display_name', 'username')
+
+    permission_classes = (IsAuthenticated,)
