@@ -94,6 +94,69 @@ class APITestsBase(TestCase):
     STATUS_CODE_VALIDATION_ERROR = 422
     client_class = APITestClient
 
+    PASSWORD = 'password123'
+    APP_USER_DATA = {
+        'email': 'app@app.com',
+        'display_name': 'Test App',
+        'username': '@app_username',
+        'password': 'app_password'
+    }
+
+    VALID_USER_DATA = {
+        'email': 'test@example.com',
+        'display_name': 'Test User',
+        'username': '@username',
+        'password': PASSWORD
+    }
+
+    # TODO: Can I access those urls from settins or some reversed search?
+    # LD: yes, just use reverse() in setUp
+    OAUTH2_URL = '/tokens/oauth2/'
+    OAUTH2_TOKEN_URL = OAUTH2_URL + 'token/'
+    OAUTH2_REVOKE_URL = OAUTH2_URL + 'revoke_token/'
+
+    def setUp(self):
+        self.app_user, self.app = self.__get_application()
+        self.client.set_auth_header(self._get_auth_header_value(self.app))
+
+    def __get_application(self):
+        user = User.objects.create_user(**self.APP_USER_DATA)
+        app = Application.objects.create(user=user,
+                                         client_type=Application.CLIENT_CONFIDENTIAL,
+                                         authorization_grant_type=Application.GRANT_PASSWORD,
+                                         name='wink-android')
+        return user, app
+
+    def _get_auth_header_value(self, app):
+        return base64.b64encode(app.client_id + ':' + app.client_secret)
+
+    def _user_data2auth_data(self, user):
+        return {'grant_type': 'password', 'username': user.email, 'password': self.PASSWORD}
+
+    def create_user(self, **kwargs):
+        user_data = self.VALID_USER_DATA
+        user_data.update(**kwargs)
+        return User.objects.create_user(**user_data)
+
+    def login(self, user):
+        data = self._user_data2auth_data(user)
+        return self.client.post_with_auth_header(self.OAUTH2_TOKEN_URL, data=data)
+
+    def logout(self):
+        return self.client.post_with_auth_header(self.OAUTH2_REVOKE_URL, data={'token': self.client.token})
+
+    def login_persistent(self, user):
+        response = self.login(user)
+        self.client.set_token(response.data['access_token'])
+
+    def check_valid_token(self, data):
+        data = data['data']['token']
+        self.assertAPIReturnedKey(data, 'token_type', 'Bearer')
+        self.assertIsNotNone(data['access_token'])
+        self.assertIsNotNone(data['refresh_token'])
+        self.assertIsNotNone(data['expires_in'])
+        self.assertIsNotNone(data['scope'])
+
     def assertAPIReturnedValidationErrorStatus(self, response):
         self.assertEquals(response.status_code, self.STATUS_CODE_VALIDATION_ERROR)
 
@@ -125,67 +188,3 @@ class APITestsBase(TestCase):
 
     def assertAPIReturnedMethodNotAllowedStatus(self, response):
         self.assertEquals(response.status_code, self.STATUS_CODE_METHOD_NOT_ALLOWED)
-
-
-class APITestClientLogin(APITestsBase):
-    APP_USER_DATA = {
-        'email': 'app@app.com',
-        'display_name': 'Test App',
-        'username': '@app_username',
-        'password': 'app_password'
-    }
-
-    VALID_USER_DATA = {
-        'email': 'test@example.com',
-        'display_name': 'Test User',
-        'username': '@username',
-        'password': 'password'
-    }
-
-    # TODO: Can I access those urls from settins or some reversed search?
-    OAUTH2_URL = '/tokens/oauth2/'
-    OAUTH2_TOKEN_URL = OAUTH2_URL + 'token/'
-    OAUTH2_REVOKE_URL = OAUTH2_URL + 'revoke_token/'
-
-    def setUp(self):
-        self.app_user, self.app = self.__get_application()
-        self.client.set_auth_header(self.__get_auth_header_value(self.app))
-
-    def __get_application(self):
-        user = User.objects.create_user(**self.APP_USER_DATA)
-        app = Application.objects.create(user=user,
-                                         client_type=Application.CLIENT_CONFIDENTIAL,
-                                         authorization_grant_type=Application.GRANT_PASSWORD,
-                                         name='wink-android')
-        return user, app
-
-    def __get_auth_header_value(self, app):
-        return base64.b64encode(app.client_id + ':' + app.client_secret)
-
-    def __user_data2auth_data(self, user_data):
-        return {'grant_type': 'password', 'username': user_data['email'], 'password': user_data['password']}
-
-    def get_valid_user(self):
-        return User.objects.create_user(**self.VALID_USER_DATA)
-
-    def login(self, user_data):
-        data = self.__user_data2auth_data(user_data)
-        return self.client.post_with_auth_header(self.OAUTH2_TOKEN_URL, data=data)
-
-    def logout(self):
-        return self.client.post_with_auth_header(self.OAUTH2_REVOKE_URL, data={'token': self.client.token})
-
-    def login_persistent_with_json(self, user_data):
-        response = self.login(user_data)
-        self.login_persistent(response.data)
-
-    def login_persistent(self, data):
-        self.client.set_token(data['access_token'])
-
-    def check_valid_token(self, data):
-        data = data['data']['token']
-        self.assertAPIReturnedKey(data, 'token_type', 'Bearer')
-        self.assertIsNotNone(data['access_token'])
-        self.assertIsNotNone(data['refresh_token'])
-        self.assertIsNotNone(data['expires_in'])
-        self.assertIsNotNone(data['scope'])

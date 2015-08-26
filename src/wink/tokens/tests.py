@@ -1,15 +1,16 @@
-from common.test_utils import APITestClientLogin
+from common.test_utils import APITestsBase
 from users.models import User
 
 # Create your tests here.
 
-class OAuth2UserAPITestCase(APITestClientLogin):
+class OAuth2UserAPITestCase(APITestsBase):
     def test_create_application(self):
         '''
         application id and secret should be not empty after calling constructor
         '''
         self.assertFalse(self.app.client_id == '')
         self.assertFalse(self.app.client_secret == '')
+        # TODO: tests should not check setup logic
 
     def test_unsupported_grant_type(self):
         """
@@ -23,18 +24,20 @@ class OAuth2UserAPITestCase(APITestClientLogin):
         '''
         user should get token after successful login
         '''
-        self.get_valid_user()
-        response = self.login(self.VALID_USER_DATA)
+        user = self.create_user()
+        response = self.login(user)
         data = response.data
+        # TODO: ??
 
     def test_user_login_with_invalid_credentials(self):
         '''
         test if user cannot login if he doesn't exist in database
         '''
-        response = self.login(self.VALID_USER_DATA)
+        user = User()
+        user.email = 'fake@example.com'
+        data = self._user_data2auth_data(user)
+        response = self.client.post_with_auth_header(self.OAUTH2_TOKEN_URL, data=data)
         self.assertAPIValidationErrorHasKey(response, "invalid_grant")
-
-    ############### OAuth2.0 tests ###############
 
     def test_anonymous_cannot_access_secret(self):
         '''
@@ -48,8 +51,8 @@ class OAuth2UserAPITestCase(APITestClientLogin):
         after successful login user can
         very useful for testing logging
         '''
-        self.get_valid_user()
-        self.login_persistent_with_json(self.VALID_USER_DATA)
+        user = self.create_user()
+        self.login_persistent(user)
         response = self.client.get('/tokens/secret', follow=True)
         self.assertEquals(response.data['status'], 'success')
 
@@ -58,8 +61,8 @@ class OAuth2UserAPITestCase(APITestClientLogin):
         after successful login user can
         very useful for testing logging
         '''
-        user = self.get_valid_user()
-        self.login_persistent_with_json(self.VALID_USER_DATA)
+        user = self.create_user()
+        self.login_persistent(user)
         response = self.client.get('/tokens/secret', follow=True)
         self.assertEquals(response.data['user'], user.pk)
 
@@ -70,8 +73,8 @@ class OAuth2UserAPITestCase(APITestClientLogin):
         {token: token=XXXX}; client_id=XXXX&client_secret=XXXX in authheader
         The server will respond wih a 200 status code on successful revocation.
         '''
-        self.get_valid_user()
-        self.login_persistent_with_json(self.VALID_USER_DATA)
+        user = self.create_user()
+        self.login_persistent(user)
         response = self.client.get('/tokens/secret', follow=True)
         self.assertEquals(response.data['status'], 'success')
         response = self.logout()
@@ -79,7 +82,8 @@ class OAuth2UserAPITestCase(APITestClientLogin):
         response = self.client.get('/tokens/secret', follow=True)
         self.assertAPIReturnedUnauthorized(response)
 
-class FacebookTestCase(APITestClientLogin):
+
+class FacebookTestCase(APITestsBase):
     '''
     facebook api login & registration
     '''
