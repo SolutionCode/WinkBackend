@@ -16,7 +16,7 @@ class OAuth2UserAPITestCase(APITestClientLogin):
         user should provide grant_type = password during loing
         maybe more test are needed
         """
-        response = self.client.post(self.OAUTH2_URL)
+        response = self.client.post(self.OAUTH2_TOKEN_URL)
         self.assertAPIValidationErrorHasKey(response, "unsupported_grant_type")
 
     def test_user_get_token_after_login(self):
@@ -63,6 +63,21 @@ class OAuth2UserAPITestCase(APITestClientLogin):
         response = self.client.get('/tokens/secret', follow=True)
         self.assertEquals(response.data['user'], user.pk)
 
+    def test_user_logout_by_revoking_token(self):
+        '''
+        POST /o/revoke_token/ HTTP/1.1
+        Content-Type: json
+        {token: token=XXXX}; client_id=XXXX&client_secret=XXXX in authheader
+        The server will respond wih a 200 status code on successful revocation.
+        '''
+        self.get_valid_user()
+        self.login_persistent_with_json(self.VALID_USER_DATA)
+        response = self.client.get('/tokens/secret', follow=True)
+        self.assertEquals(response.data['status'], 'success')
+        response = self.logout()
+        self.assertAPIReturnedOKStatus(response)
+        response = self.client.get('/tokens/secret', follow=True)
+        self.assertAPIReturnedUnauthorized(response)
 
 class FacebookTestCase(APITestClientLogin):
     '''

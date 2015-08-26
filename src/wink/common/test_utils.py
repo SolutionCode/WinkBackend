@@ -48,8 +48,13 @@ class APITestClient(Client):
 
     @process_response
     def post_with_auth_header(self, *args, **kwargs):
+        """
+        calling post from ApiTest will overide token header! 40 minutes for debuging
+        """
+        self._patch_data(kwargs)
         self._add_auth_header(kwargs)
-        return self.post(*args, **kwargs)
+
+        return super(APITestClient, self).post(*args, **kwargs)
 
     @process_response
     def get(self, *args, **kwargs):
@@ -137,7 +142,10 @@ class APITestClientLogin(APITestsBase):
         'password': 'password'
     }
 
-    OAUTH2_URL = '/tokens/oauth2/token/'
+    # TODO: Can I access those urls from settins or some reversed search?
+    OAUTH2_URL = '/tokens/oauth2/'
+    OAUTH2_TOKEN_URL = OAUTH2_URL + 'token/'
+    OAUTH2_REVOKE_URL = OAUTH2_URL + 'revoke_token/'
 
     def setUp(self):
         self.app_user, self.app = self.__get_application()
@@ -162,7 +170,10 @@ class APITestClientLogin(APITestsBase):
 
     def login(self, user_data):
         data = self.__user_data2auth_data(user_data)
-        return self.client.post_with_auth_header(self.OAUTH2_URL, data=data)
+        return self.client.post_with_auth_header(self.OAUTH2_TOKEN_URL, data=data)
+
+    def logout(self):
+        return self.client.post_with_auth_header(self.OAUTH2_REVOKE_URL, data={'token': self.client.token})
 
     def login_persistent_with_json(self, user_data):
         response = self.login(user_data)
