@@ -147,6 +147,8 @@ SOCIAL_AUTH_FACEBOOK_SECRET = "eef57d5e57d51c80adc47bb44a73c395"
 SOCIAL_AUTH_FACEBOOK_SCOPE = ['email', 'public_profile', 'friends']
 # SOCIAL_AUTH_FACEBOOK_PROFILE_EXTRA_PARAMS = {'locale': 'ru_RU'}
 
+ALLOWED_BACKENDS = ['facebook']
+
 MIDDLEWARE_CLASSES = (
     'django.contrib.sessions.middleware.SessionMiddleware',
     'django.middleware.common.CommonMiddleware',
