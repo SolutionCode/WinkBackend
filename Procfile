@@ -1,2 +1,2 @@
-web: gunicorn src.wink.wink.wsgi --log-file -
+web: gunicorn wink.wsgi --log-file -
 
