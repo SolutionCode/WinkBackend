@@ -1,9 +1,17 @@
 from common.test_utils import APITestsBase
 from users.models import User
+from users.serializers import UserSerializer
+
+
+class ValidUserConstraintsTestCase(APITestsBase):
+    def test_invalid_handle_fails(self):
+        user_data = self.VALID_USER_DATA
+        user_data['username'] = 'no_at'
+        serializer = UserSerializer(data=user_data)
+        self.assertFalse(serializer.is_valid())
 
 
 class GetUserAPITestCase(APITestsBase):
-
     def test_get_existing_user(self):
         user = self.create_user()
         self.login_persistent(user)
@@ -36,7 +44,6 @@ class GetUserAPITestCase(APITestsBase):
 
 
 class GetPublicUserAPITestCase(APITestsBase):
-
     def test_get_non_existing_user(self):
         user = self.create_user()
         self.login_persistent(user)
@@ -66,7 +73,6 @@ class GetPublicUserAPITestCase(APITestsBase):
 
 
 class UpdateUserAPITestCase(APITestsBase):
-
     def test_patch_not_authorized_user(self):
         user = self.create_user()
         # self.login_persistent(user)
@@ -119,7 +125,6 @@ class UpdateUserAPITestCase(APITestsBase):
 
 
 class ListUserPublicAPITestCase(APITestsBase):
-
     def test_get_list_one_element(self):
         user = self.create_user()
         self.login_persistent(user)
