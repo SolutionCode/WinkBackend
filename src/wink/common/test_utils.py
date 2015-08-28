@@ -139,26 +139,23 @@ class APITestsBase(TestCase):
         user_data.update(**kwargs)
         return User.objects.create_user(**user_data)
 
-    def login(self, user):
-        data = self._user_data2auth_data(user)
-        return self.client.post_with_auth_header(self.OAUTH2_TOKEN_URL, data=data)
-
     def logout(self):
         return self.client.post_with_auth_header(self.OAUTH2_REVOKE_URL, data={'token': self.client.token})
 
-    def login_persistent(self, user):
-        response = self.login(user)
-        self.login_data(response.data)
+    def login(self, user):
+        data = self._user_data2auth_data(user)
+        response = self.client.post_with_auth_header(self.OAUTH2_TOKEN_URL, data=data)
+        self.login_data(response)
         return response
 
-    def login_data(self, data):
-        data = data['data']['token']
+    def login_data(self, response):
+        data = response.data['data']['token']
         self.client.token = data['access_token']
         self.client.ref_token = data['refresh_token']
 
     def extend_login(self):
         response = self.client.post_with_ref_token(self.OAUTH2_TOKEN_URL)
-        self.login_data(response.data)
+        self.login_data(response)
         return response
 
     def check_valid_token(self, data):

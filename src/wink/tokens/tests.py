@@ -26,8 +26,7 @@ class OAuth2UserAPITestCase(APITestsBase):
         '''
         user = self.create_user()
         response = self.login(user)
-        data = response.data
-        # TODO: ??
+        self.check_valid_token(response.data)
 
     def test_user_login_with_invalid_credentials(self):
         '''
@@ -52,7 +51,7 @@ class OAuth2UserAPITestCase(APITestsBase):
         very useful for testing logging
         '''
         user = self.create_user()
-        self.login_persistent(user)
+        self.login(user)
         response = self.client.get('/tokens/secret', follow=True)
         self.assertEquals(response.data['status'], 'success')
 
@@ -62,7 +61,7 @@ class OAuth2UserAPITestCase(APITestsBase):
         very useful for testing logging
         '''
         user = self.create_user()
-        self.login_persistent(user)
+        self.login(user)
         response = self.client.get('/tokens/secret', follow=True)
         self.assertEquals(response.data['user'], user.pk)
 
@@ -74,7 +73,7 @@ class OAuth2UserAPITestCase(APITestsBase):
         The server will respond wih a 200 status code on successful revocation.
         '''
         user = self.create_user()
-        self.login_persistent(user)
+        self.login(user)
         response = self.client.get('/tokens/secret', follow=True)
         self.assertEquals(response.data['status'], 'success')
         response = self.logout()
@@ -84,7 +83,7 @@ class OAuth2UserAPITestCase(APITestsBase):
 
     def test_user_extends_his_token(self):
         user = self.create_user()
-        self.login_persistent(user)
+        self.login(user)
         token1 = self.client.token
         response = self.client.get('/tokens/secret', follow=True)
         self.assertEquals(response.data['status'], 'success')
@@ -95,7 +94,6 @@ class OAuth2UserAPITestCase(APITestsBase):
         self.client.token = token1
         response = self.client.get('/tokens/secret', follow=True)
         self.assertAPIReturnedUnauthorized(response)
-
 
 
 class FacebookTestCase(APITestsBase):

@@ -14,7 +14,7 @@ class ValidUserConstraintsTestCase(APITestsBase):
 class GetUserAPITestCase(APITestsBase):
     def test_get_existing_user(self):
         user = self.create_user()
-        self.login_persistent(user)
+        self.login(user)
 
         response = self.client.get('/users/{pk}'.format(pk=user.pk), follow=True)
 
@@ -36,7 +36,7 @@ class GetUserAPITestCase(APITestsBase):
     def test_get_other_user(self):
         other_user = User.objects.create(username='SomeUser', email='other@example.com')
         user = self.create_user()
-        self.login_persistent(user)
+        self.login(user)
 
         response = self.client.get('/users/{pk}'.format(pk=other_user.pk), follow=True)
 
@@ -46,7 +46,7 @@ class GetUserAPITestCase(APITestsBase):
 class GetPublicUserAPITestCase(APITestsBase):
     def test_get_non_existing_user(self):
         user = self.create_user()
-        self.login_persistent(user)
+        self.login(user)
 
         response = self.client.get('/users/0/public', follow=True)
 
@@ -54,7 +54,7 @@ class GetPublicUserAPITestCase(APITestsBase):
 
     def test_get_existing_user(self):
         user = self.create_user()
-        self.login_persistent(user)
+        self.login(user)
 
         response = self.client.get('/users/{pk}/public'.format(pk=user.pk), follow=True)
 
@@ -82,7 +82,7 @@ class UpdateUserAPITestCase(APITestsBase):
 
     def test_patch_display_name_successful(self):
         user = self.create_user()
-        self.login_persistent(user)
+        self.login(user)
 
         patched_display_name = 'New Display Name'
         response = self.client.patch('/users/{pk}'.format(pk=user.pk),
@@ -96,7 +96,7 @@ class UpdateUserAPITestCase(APITestsBase):
     def test_patch_username_uniqueness(self):
         other_user = User.objects.create(username='SomeUser', email='other@example.com')
         user = self.create_user()
-        self.login_persistent(user)
+        self.login(user)
 
         patched = other_user.username
         response = self.client.patch('/users/{pk}'.format(pk=user.pk),
@@ -108,7 +108,7 @@ class UpdateUserAPITestCase(APITestsBase):
     def test_patch_other_user(self):
         other_user = User.objects.create(username='SomeUser', email='other@example.com')
         user = self.create_user()
-        self.login_persistent(user)
+        self.login(user)
 
         patched = other_user.username
         response = self.client.patch('/users/{pk}'.format(pk=other_user.pk),
@@ -118,7 +118,7 @@ class UpdateUserAPITestCase(APITestsBase):
 
     def test_put_not_supported(self):
         user = self.create_user()
-        self.login_persistent(user)
+        self.login(user)
 
         response = self.client.put('/users/{pk}'.format(pk=user.pk), follow=True)
         self.assertAPIReturnedMethodNotAllowedStatus(response)
@@ -127,7 +127,7 @@ class UpdateUserAPITestCase(APITestsBase):
 class ListUserPublicAPITestCase(APITestsBase):
     def test_get_list_one_element(self):
         user = self.create_user()
-        self.login_persistent(user)
+        self.login(user)
 
         users_already = User.objects.count()
 
@@ -139,7 +139,7 @@ class ListUserPublicAPITestCase(APITestsBase):
 
     def test_pagination(self):
         user = self.create_user()
-        self.login_persistent(user)
+        self.login(user)
 
         users_already = User.objects.count()
 
@@ -160,7 +160,7 @@ class ListUserPublicAPITestCase(APITestsBase):
 
     def test_filtering_by_username(self):
         user = self.create_user()
-        self.login_persistent(user)
+        self.login(user)
 
         user_1 = User.objects.create(username='@username1', email='test+1@example.com')
         User.objects.create(username='@username2', email='test+2@example.com')
@@ -173,7 +173,7 @@ class ListUserPublicAPITestCase(APITestsBase):
 
     def test_search_by_display_name_partial(self):
         user = self.create_user()
-        self.login_persistent(user)
+        self.login(user)
 
         user_1 = User.objects.create(username='@username1', email='test+1@example.com', display_name='Included')
         User.objects.create(username='@username2', email='test+2@example.com', display_name='Excluded')
@@ -187,7 +187,7 @@ class ListUserPublicAPITestCase(APITestsBase):
 
     def test_search_by_display_name_beyond_ascii(self):
         user = self.create_user()
-        self.login_persistent(user)
+        self.login(user)
 
         user_1 = User.objects.create(username='@username1', email='test+1@example.com',
                                      display_name=u'J\xf3zef Kowenzowski')
@@ -203,7 +203,7 @@ class ListUserPublicAPITestCase(APITestsBase):
 
     def test_search_by_username_partial(self):
         user = self.create_user()
-        self.login_persistent(user)
+        self.login(user)
 
         user_1 = User.objects.create(username='@username1', email='test+1@example.com', display_name='Included')
         User.objects.create(username='@username2', email='test+2@example.com', display_name='Excluded')
@@ -217,7 +217,7 @@ class ListUserPublicAPITestCase(APITestsBase):
 
     def test_filtering_by_email_ignored(self):
         user = self.create_user()
-        self.login_persistent(user)
+        self.login(user)
 
         user_1 = User.objects.create(username='@username1', email='test+1@example.com')
         User.objects.create(username='@username2', email='test+2@example.com')
@@ -230,7 +230,7 @@ class ListUserPublicAPITestCase(APITestsBase):
 
     def test_sorting_by_display_name(self):
         user = self.create_user()
-        self.login_persistent(user)
+        self.login(user)
 
         user_1 = User.objects.create(username='@filter1', email='test+1@example.com', display_name='A')
         user_2 = User.objects.create(username='@filter2', email='test+2@example.com', display_name='C')
@@ -247,7 +247,7 @@ class ListUserPublicAPITestCase(APITestsBase):
 
     def test_sorting_by_display_name_descending(self):
         user = self.create_user()
-        self.login_persistent(user)
+        self.login(user)
 
         user_1 = User.objects.create(username='@filter1', email='test+1@example.com', display_name='A')
         user_2 = User.objects.create(username='@filter2', email='test+2@example.com', display_name='C')
