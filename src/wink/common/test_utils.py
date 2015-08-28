@@ -85,6 +85,8 @@ class APITestClient(Client):
 
 
 class APITestsBase(TestCase):
+    fixtures = ['android-app.json']
+
     STATUS_CODE_OK = 200
     STATUS_CODE_CREATED = 201
     STATUS_CODE_BAD_REQUEST = 400
@@ -96,13 +98,6 @@ class APITestsBase(TestCase):
     client_class = APITestClient
 
     PASSWORD = 'password123'
-    APP_USER_DATA = {
-        'email': 'app@app.com',
-        'display_name': 'Test App',
-        'username': '@app_username',
-        'password': 'app_password'
-    }
-
     VALID_USER_DATA = {
         'email': 'test@example.com',
         'display_name': 'Test User',
@@ -117,16 +112,8 @@ class APITestsBase(TestCase):
     OAUTH2_REVOKE_URL = OAUTH2_URL + 'revoke_token/'
 
     def setUp(self):
-        self.app_user, self.app = self.__get_application()
+        self.app = Application.objects.get(name='wink-android-app')
         self.client.auth_header = self._get_auth_header_value(self.app)
-
-    def __get_application(self):
-        user = User.objects.create_user(**self.APP_USER_DATA)
-        app = Application.objects.create(user=user,
-                                         client_type=Application.CLIENT_CONFIDENTIAL,
-                                         authorization_grant_type=Application.GRANT_PASSWORD,
-                                         name='wink-android')
-        return user, app
 
     def _get_auth_header_value(self, app):
         return base64.b64encode(app.client_id + ':' + app.client_secret)

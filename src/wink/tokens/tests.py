@@ -4,14 +4,6 @@ from users.models import User
 # Create your tests here.
 
 class OAuth2UserAPITestCase(APITestsBase):
-    def test_create_application(self):
-        '''
-        application id and secret should be not empty after calling constructor
-        '''
-        self.assertFalse(self.app.client_id == '')
-        self.assertFalse(self.app.client_secret == '')
-        # TODO: tests should not check setup logic
-
     def test_unsupported_grant_type(self):
         """
         user should provide grant_type = password during loing
