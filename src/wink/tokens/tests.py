@@ -82,6 +82,21 @@ class OAuth2UserAPITestCase(APITestsBase):
         response = self.client.get('/tokens/secret', follow=True)
         self.assertAPIReturnedUnauthorized(response)
 
+    def test_user_extends_his_token(self):
+        user = self.create_user()
+        self.login_persistent(user)
+        token1 = self.client.token
+        response = self.client.get('/tokens/secret', follow=True)
+        self.assertEquals(response.data['status'], 'success')
+        self.extend_login()
+        token2 = self.client.token
+        response = self.client.get('/tokens/secret', follow=True)
+        self.assertEquals(response.data['status'], 'success')
+        self.client.token = token1
+        response = self.client.get('/tokens/secret', follow=True)
+        self.assertAPIReturnedUnauthorized(response)
+
+
 
 class FacebookTestCase(APITestsBase):
     '''
@@ -173,5 +188,4 @@ class FacebookTestCase(APITestsBase):
         application sents invalid token...
         '''
         response = self.client.post_with_auth_header(self.LOGIN_URL, data=self.INVALID_FACEBOOK_TOKEN)
-        print response
         self.assertAPIValidationErrorHasKey(response, "400 Client Error: Bad Request when connecting to facebook")

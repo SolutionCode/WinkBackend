@@ -3,9 +3,11 @@ import json
 import binascii
 from urllib import unquote_plus
 
+from braces.views import CsrfExemptMixin
 from common.exceptions import WinkException
 from common.renderers import JSONRenderer
 from django.core.exceptions import ObjectDoesNotExist
+from django.views.generic import View
 from oauth2_provider.models import Application
 from requests import HTTPError
 from rest_framework.views import APIView
@@ -23,32 +25,31 @@ from users.serializers import UserSerializer
 from tokens.serializers import SocialTokenSerializer, EmptySerializer, OAuthTokenSerializer
 
 
-def fix_error2errors_in_oauth(response):
-    d = json.loads(response.content)
-    if 'error' in d:
-        d = {'errors': [d['error']]}
-    response.content = json.dumps(d)
-    return response
+class WinkTokenView(CsrfExemptMixin, View):
+    BaseTokenView = None
 
-
-class WinkTokenView(TokenView):
     @method_decorator(sensitive_post_parameters('password'))
     def post(self, request, *args, **kwargs):
-        '''
-        extended OAuth token view, because error should be changed to errors
-        '''
-        response = super(WinkTokenView, self).post(request, *args, **kwargs)
-        return fix_error2errors_in_oauth(response)
+        response = self.BaseTokenView.post(request, *args, **kwargs)
+        return self._fix_error2errors_in_oauth(response)
+
+    def _fix_error2errors_in_oauth(self, response):
+        if response.content:
+            d = json.loads(response.content)
+            if 'error' in d:
+                d = {'errors': [d['error']]}
+            else:
+                d = {'data': {OAuthTokenSerializer.resource_name: d}}
+            response.content = json.dumps(d)
+        return response
 
 
-class WinkRevokeTokenView(RevokeTokenView):
-    """
-    Implements an endpoint to revoke access or refresh tokens
-    """
+class WinkAcceptTokenView(WinkTokenView):
+    BaseTokenView = TokenView()
 
-    def post(self, request, *args, **kwargs):
-        response = super(WinkRevokeTokenView, self).post(request, *args, **kwargs)
-        return fix_error2errors_in_oauth(response)
+
+class WinkRevokeTokenView(WinkTokenView):
+    BaseTokenView = RevokeTokenView()
 
 
 class SocialAccessTokenView(APIView):

@@ -24,6 +24,7 @@ def process_response(func):
 class APITestClient(Client):
     token = None
     auth_header = None
+    ref_token = None
 
     def _patch_data(self, kwargs):
         data = kwargs.get('data')
@@ -53,7 +54,13 @@ class APITestClient(Client):
         """
         self._patch_data(kwargs)
         self._add_auth_header(kwargs)
+        return super(APITestClient, self).post(*args, **kwargs)
 
+    @process_response
+    def post_with_ref_token(self, *args, **kwargs):
+        kwargs['data'] = {'grant_type': 'refresh_token', 'refresh_token': self.ref_token}
+        self._patch_data(kwargs)
+        self._add_auth_header(kwargs)
         return super(APITestClient, self).post(*args, **kwargs)
 
     @process_response
@@ -75,12 +82,6 @@ class APITestClient(Client):
         self._add_token(kwargs)
 
         return super(APITestClient, self).put(*args, **kwargs)
-
-    def set_token(self, token):
-        self.token = token
-
-    def set_auth_header(self, auth_header):
-        self.auth_header = auth_header
 
 
 class APITestsBase(TestCase):
@@ -117,7 +118,7 @@ class APITestsBase(TestCase):
 
     def setUp(self):
         self.app_user, self.app = self.__get_application()
-        self.client.set_auth_header(self._get_auth_header_value(self.app))
+        self.client.auth_header = self._get_auth_header_value(self.app)
 
     def __get_application(self):
         user = User.objects.create_user(**self.APP_USER_DATA)
@@ -147,7 +148,18 @@ class APITestsBase(TestCase):
 
     def login_persistent(self, user):
         response = self.login(user)
-        self.client.set_token(response.data['access_token'])
+        self.login_data(response.data)
+        return response
+
+    def login_data(self, data):
+        data = data['data']['token']
+        self.client.token = data['access_token']
+        self.client.ref_token = data['refresh_token']
+
+    def extend_login(self):
+        response = self.client.post_with_ref_token(self.OAUTH2_TOKEN_URL)
+        self.login_data(response.data)
+        return response
 
     def check_valid_token(self, data):
         data = data['data']['token']

@@ -6,7 +6,6 @@ class JSONRenderer(renderers.JSONRenderer):
         try:
             resource_name = renderer_context.get('view').serializer_class.resource_name
         except AttributeError:
-            # TODO: verify it's working... what is object when called
             resource_name = object
 
         if 'errors' not in data:
