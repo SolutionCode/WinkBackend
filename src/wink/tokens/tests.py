@@ -179,3 +179,4 @@ class FacebookTestCase(APITestsBase):
         '''
         response = self.client.post_with_auth_header(self.LOGIN_URL, data=self.INVALID_FACEBOOK_TOKEN)
         self.assertAPIValidationErrorHasKey(response, "400 Client Error: Bad Request when connecting to facebook")
+

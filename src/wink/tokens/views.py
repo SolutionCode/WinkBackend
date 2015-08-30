@@ -4,7 +4,7 @@ import binascii
 from urllib import unquote_plus
 
 from braces.views import CsrfExemptMixin
-from common.exceptions import WinkException
+from common.exceptions import WinkParseException
 from common.renderers import JSONRenderer
 from django.core.exceptions import ObjectDoesNotExist
 from django.views.generic import View
@@ -63,12 +63,12 @@ class SocialAccessTokenView(APIView):
         try:
             b64_decoded = base64.b64decode(auth_string)
         except (TypeError, binascii.Error):
-            raise WinkException("Failed basic auth: %s can't be decoded as base64")
+            raise WinkParseException("Failed basic auth: %s can't be decoded as base64")
 
         try:
             auth_string_decoded = b64_decoded.decode(encoding)
         except UnicodeDecodeError:
-            raise WinkException("Failed basic auth: %s can't be decoded as unicode by %s" % auth_string,
+            raise WinkParseException("Failed basic auth: %s can't be decoded as unicode by %s" % auth_string,
                                 encoding)
 
         client_id, client_secret = map(unquote_plus, auth_string_decoded.split(':', 1))
@@ -81,17 +81,17 @@ class SocialAccessTokenView(APIView):
         try:
             self.app = Application.objects.get(client_id=client_id)
         except ObjectDoesNotExist:
-            raise WinkException("client_id doesn't exist")
+            raise WinkParseException("client_id doesn't exist")
         try:
             data = social_serializer.data
             strategy = load_strategy(request)
             backend = load_backend(strategy, data['backend'], None)
             self.user = backend.do_auth(data['social_token'])
         except HTTPError as e:
-            raise WinkException(e.message + " when connecting to " + data['backend'])
+            raise WinkParseException(e.message + " when connecting to " + data['backend'])
 
         if not self.user:
-            raise WinkException("after token user is none")
+            raise WinkParseException("after token user is none")
 
         return None
 
@@ -112,7 +112,7 @@ class RegisterBySocialAccessTokenView(SocialAccessTokenView):
             }
             return Response(returned_json)
         else:
-            raise WinkException("user already registered")
+            raise WinkParseException("user already registered")
 
 
 class LoginBySocialAccessTokenView(SocialAccessTokenView):

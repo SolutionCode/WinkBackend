@@ -4,8 +4,15 @@ __author__ = 'sacherus'
 
 
 class WinkException(APIException):
-    status_code = 400
-    default_detail = 'Wink Api Exception'
+    default_detail = 'Wink api general exception'
 
     def __init__(self, msg):
-        self.detail = {"errors": [msg]}
+        self.detail = {"errors": msg}
+
+
+class WinkParseException(WinkException):
+    status_code = 400
+    default_detail = 'Wink parse exception'
+
+    def __init__(self, msg):
+        super(WinkParseException, self).__init__([msg])
