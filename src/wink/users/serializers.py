@@ -13,6 +13,8 @@ class UserSerializer(HyperlinkedModelSerializer):
             'url',
             'email',
             'display_name',
+            'first_name',
+            'last_name',
             'username'
         )
 
