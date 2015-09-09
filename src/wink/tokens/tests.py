@@ -4,14 +4,6 @@ from users.models import User
 # Create your tests here.
 
 class OAuth2UserAPITestCase(APITestsBase):
-    def test_create_application(self):
-        '''
-        application id and secret should be not empty after calling constructor
-        '''
-        self.assertFalse(self.app.client_id == '')
-        self.assertFalse(self.app.client_secret == '')
-        # TODO: tests should not check setup logic
-
     def test_unsupported_grant_type(self):
         """
         user should provide grant_type = password during loing
@@ -26,8 +18,7 @@ class OAuth2UserAPITestCase(APITestsBase):
         '''
         user = self.create_user()
         response = self.login(user)
-        data = response.data
-        # TODO: ??
+        self.check_valid_token(response.data)
 
     def test_user_login_with_invalid_credentials(self):
         '''
@@ -52,7 +43,7 @@ class OAuth2UserAPITestCase(APITestsBase):
         very useful for testing logging
         '''
         user = self.create_user()
-        self.login_persistent(user)
+        self.login(user)
         response = self.client.get('/tokens/secret', follow=True)
         self.assertEquals(response.data['status'], 'success')
 
@@ -62,7 +53,7 @@ class OAuth2UserAPITestCase(APITestsBase):
         very useful for testing logging
         '''
         user = self.create_user()
-        self.login_persistent(user)
+        self.login(user)
         response = self.client.get('/tokens/secret', follow=True)
         self.assertEquals(response.data['user'], user.pk)
 
@@ -74,11 +65,25 @@ class OAuth2UserAPITestCase(APITestsBase):
         The server will respond wih a 200 status code on successful revocation.
         '''
         user = self.create_user()
-        self.login_persistent(user)
+        self.login(user)
         response = self.client.get('/tokens/secret', follow=True)
         self.assertEquals(response.data['status'], 'success')
         response = self.logout()
         self.assertAPIReturnedOKStatus(response)
+        response = self.client.get('/tokens/secret', follow=True)
+        self.assertAPIReturnedUnauthorized(response)
+
+    def test_user_extends_his_token(self):
+        user = self.create_user()
+        self.login(user)
+        token1 = self.client.token
+        response = self.client.get('/tokens/secret', follow=True)
+        self.assertEquals(response.data['status'], 'success')
+        self.extend_login()
+        token2 = self.client.token
+        response = self.client.get('/tokens/secret', follow=True)
+        self.assertEquals(response.data['status'], 'success')
+        self.client.token = token1
         response = self.client.get('/tokens/secret', follow=True)
         self.assertAPIReturnedUnauthorized(response)
 
@@ -174,3 +179,4 @@ class FacebookTestCase(APITestsBase):
         '''
         response = self.client.post_with_auth_header(self.LOGIN_URL, data=self.INVALID_FACEBOOK_TOKEN)
         self.assertAPIValidationErrorHasKey(response, "400 Client Error: Bad Request when connecting to facebook")
+

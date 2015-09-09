@@ -24,6 +24,7 @@ def process_response(func):
 class APITestClient(Client):
     token = None
     auth_header = None
+    ref_token = None
 
     def _patch_data(self, kwargs):
         data = kwargs.get('data')
@@ -53,7 +54,13 @@ class APITestClient(Client):
         """
         self._patch_data(kwargs)
         self._add_auth_header(kwargs)
+        return super(APITestClient, self).post(*args, **kwargs)
 
+    @process_response
+    def post_with_ref_token(self, *args, **kwargs):
+        kwargs['data'] = {'grant_type': 'refresh_token', 'refresh_token': self.ref_token}
+        self._patch_data(kwargs)
+        self._add_auth_header(kwargs)
         return super(APITestClient, self).post(*args, **kwargs)
 
     @process_response
@@ -76,14 +83,10 @@ class APITestClient(Client):
 
         return super(APITestClient, self).put(*args, **kwargs)
 
-    def set_token(self, token):
-        self.token = token
-
-    def set_auth_header(self, auth_header):
-        self.auth_header = auth_header
-
 
 class APITestsBase(TestCase):
+    fixtures = ['android-app.json']
+
     STATUS_CODE_OK = 200
     STATUS_CODE_CREATED = 201
     STATUS_CODE_BAD_REQUEST = 400
@@ -95,13 +98,6 @@ class APITestsBase(TestCase):
     client_class = APITestClient
 
     PASSWORD = 'password123'
-    APP_USER_DATA = {
-        'email': 'app@app.com',
-        'display_name': 'Test App',
-        'username': '@app_username',
-        'password': 'app_password'
-    }
-
     VALID_USER_DATA = {
         'email': 'test@example.com',
         'display_name': 'Test User',
@@ -116,16 +112,8 @@ class APITestsBase(TestCase):
     OAUTH2_REVOKE_URL = OAUTH2_URL + 'revoke_token/'
 
     def setUp(self):
-        self.app_user, self.app = self.__get_application()
-        self.client.set_auth_header(self._get_auth_header_value(self.app))
-
-    def __get_application(self):
-        user = User.objects.create_user(**self.APP_USER_DATA)
-        app = Application.objects.create(user=user,
-                                         client_type=Application.CLIENT_CONFIDENTIAL,
-                                         authorization_grant_type=Application.GRANT_PASSWORD,
-                                         name='wink-android')
-        return user, app
+        self.app = Application.objects.get(name='wink-android-app')
+        self.client.auth_header = self._get_auth_header_value(self.app)
 
     def _get_auth_header_value(self, app):
         return base64.b64encode(app.client_id + ':' + app.client_secret)
@@ -138,16 +126,24 @@ class APITestsBase(TestCase):
         user_data.update(**kwargs)
         return User.objects.create_user(**user_data)
 
-    def login(self, user):
-        data = self._user_data2auth_data(user)
-        return self.client.post_with_auth_header(self.OAUTH2_TOKEN_URL, data=data)
-
     def logout(self):
         return self.client.post_with_auth_header(self.OAUTH2_REVOKE_URL, data={'token': self.client.token})
 
-    def login_persistent(self, user):
-        response = self.login(user)
-        self.client.set_token(response.data['access_token'])
+    def login(self, user):
+        data = self._user_data2auth_data(user)
+        response = self.client.post_with_auth_header(self.OAUTH2_TOKEN_URL, data=data)
+        self.login_data(response)
+        return response
+
+    def login_data(self, response):
+        data = response.data['data']['token']
+        self.client.token = data['access_token']
+        self.client.ref_token = data['refresh_token']
+
+    def extend_login(self):
+        response = self.client.post_with_ref_token(self.OAUTH2_TOKEN_URL)
+        self.login_data(response)
+        return response
 
     def check_valid_token(self, data):
         data = data['data']['token']

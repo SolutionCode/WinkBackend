@@ -3,138 +3,127 @@ import json
 import binascii
 from urllib import unquote_plus
 
+from braces.views import CsrfExemptMixin
+from common.exceptions import WinkParseException
+from common.renderers import JSONRenderer
 from django.core.exceptions import ObjectDoesNotExist
+from django.views.generic import View
 from oauth2_provider.models import Application
 from requests import HTTPError
+from rest_framework.views import APIView
 from social.apps.django_app.utils import load_strategy, load_backend
 from django.utils.decorators import method_decorator
 from django.views.decorators.debug import sensitive_post_parameters
 from django.contrib.auth import login
 from django.http import JsonResponse
 from rest_framework.decorators import api_view, permission_classes
-from rest_framework import status
 from rest_framework.response import Response
 from rest_framework.permissions import IsAuthenticated
 from oauth2_provider.views import TokenView, RevokeTokenView
 from tokens.tools import get_access_token
 from users.serializers import UserSerializer
-from tokens.serializers import SocialTokenSerializer
+from tokens.serializers import SocialTokenSerializer, EmptySerializer, OAuthTokenSerializer
 
 
-def fix_error2errors_in_oauth(response):
-    d = json.loads(response.content)
-    if 'error' in d:
-        d = {'errors': [d['error']]}
-    response.content = json.dumps(d)
-    return response
+class WinkTokenView(CsrfExemptMixin, View):
+    BaseTokenView = None
 
-
-class WinkTokenView(TokenView):
     @method_decorator(sensitive_post_parameters('password'))
     def post(self, request, *args, **kwargs):
-        '''
-        extended OAuth token view, because error should be changed to errors
-        '''
-        response = super(WinkTokenView, self).post(request, *args, **kwargs)
-        return fix_error2errors_in_oauth(response)
+        response = self.BaseTokenView.post(request, *args, **kwargs)
+        return self._fix_error2errors_in_oauth(response)
 
-
-class WinkRevokeTokenView(RevokeTokenView):
-    """
-    Implements an endpoint to revoke access or refresh tokens
-    """
-
-    def post(self, request, *args, **kwargs):
-        response = super(WinkRevokeTokenView, self).post(request, *args, **kwargs)
-        return fix_error2errors_in_oauth(response)
-
-
-def _facebook_login_error(message):
-    return Response({"errors": [message]}, status=status.HTTP_401_UNAUTHORIZED)
-
-
-def _get_client_id_and_secret(request):
-    auth_string = request.META['HTTP_AUTHORIZATION'].split()[1]
-    encoding = 'utf-8'
-    try:
-        b64_decoded = base64.b64decode(auth_string)
-    except (TypeError, binascii.Error):
-        print ("Failed basic auth: %s can't be decoded as base64", auth_string)
-        return False
-
-    try:
-        auth_string_decoded = b64_decoded.decode(encoding)
-    except UnicodeDecodeError:
-        print ("Failed basic auth: %s can't be decoded as unicode by %s",
-               auth_string,
-               encoding)
-        return False
-
-    client_id, client_secret = map(unquote_plus, auth_string_decoded.split(':', 1))
-    return client_id, client_secret
-
-
-@api_view(['POST'])
-def register_by_access_token(request, *args, **kwargs):
-    # TODO: make me pretty, decorator? api_view
-    # LD: looks fine :)
-    # print request.META
-    social_serializer = SocialTokenSerializer(data=request.data)
-    social_serializer.is_valid(raise_exception=True)
-    try:
-        # TODO: this is really bad!
-        client_id, client_secret = _get_client_id_and_secret(request)
-        try:
-            app = Application.objects.get(client_id=client_id)
-        except ObjectDoesNotExist:
-            return Response({"errors": ["client_id doesn't exist"]}, status=status.HTTP_400_BAD_REQUEST)
-        data = social_serializer.data
-        strategy = load_strategy(request)
-        backend = load_backend(strategy, data['backend'], None)
-        user = backend.do_auth(data['social_token'])
-        if user:
-            if not user.last_login:
-                login(request, user)
-                serializer = UserSerializer(user, context={'request': request})
-                returned_json = {
-                    'user': serializer.data,
-                    'token': get_access_token(user, app)
-                }
-                return JsonResponse({'data': returned_json})
+    def _fix_error2errors_in_oauth(self, response):
+        if response.content:
+            d = json.loads(response.content)
+            if 'error' in d:
+                d = {'errors': [d['error']]}
             else:
-                return Response({"errors": ["user already registered"]}, status=status.HTTP_400_BAD_REQUEST)
-        else:
-            return _facebook_login_error("after token user is none")
-    except HTTPError as e:
-        return _facebook_login_error(e.message + " when connecting to " + data['backend'])
+                d = {'data': {OAuthTokenSerializer.resource_name: d}}
+            response.content = json.dumps(d)
+        return response
 
 
-@api_view(['POST'])
-def login_by_access_token(request, *args, **kwargs):
-    # TODO: make me pretty, decorator?
-    social_serializer = SocialTokenSerializer(data=request.data)
-    social_serializer.is_valid(raise_exception=True)
-    try:
-        # TODO: this is really bad!
-        client_id, client_secret = _get_client_id_and_secret(request)
+class WinkAcceptTokenView(WinkTokenView):
+    BaseTokenView = TokenView()
+
+
+class WinkRevokeTokenView(WinkTokenView):
+    BaseTokenView = RevokeTokenView()
+
+
+class SocialAccessTokenView(APIView):
+    renderer_classes = (JSONRenderer,)
+    app = None
+    user = None
+
+    def _get_client_id_and_secret(self, request):
+        auth_string = request.META['HTTP_AUTHORIZATION'].split()[1]
+        encoding = 'utf-8'
         try:
-            app = Application.objects.get(client_id=client_id)
+            b64_decoded = base64.b64decode(auth_string)
+        except (TypeError, binascii.Error):
+            raise WinkParseException("Failed basic auth: %s can't be decoded as base64")
+
+        try:
+            auth_string_decoded = b64_decoded.decode(encoding)
+        except UnicodeDecodeError:
+            raise WinkParseException("Failed basic auth: %s can't be decoded as unicode by %s" % auth_string,
+                                encoding)
+
+        client_id, client_secret = map(unquote_plus, auth_string_decoded.split(':', 1))
+        return client_id, client_secret
+
+    def post(self, request, format=None):
+        social_serializer = SocialTokenSerializer(data=request.data)
+        social_serializer.is_valid(raise_exception=True)
+        client_id, client_secret = self._get_client_id_and_secret(request)
+        try:
+            self.app = Application.objects.get(client_id=client_id)
         except ObjectDoesNotExist:
-            return Response({"errors": ["client_id doesn't exist"]}, status=status.HTTP_400_BAD_REQUEST)
-        data = social_serializer.data
-        strategy = load_strategy(request)
-        backend = load_backend(strategy, data['backend'], None)
-        user = backend.do_auth(data['social_token'])
-        if user:
-            login(request, user)
+            raise WinkParseException("client_id doesn't exist")
+        try:
+            data = social_serializer.data
+            strategy = load_strategy(request)
+            backend = load_backend(strategy, data['backend'], None)
+            self.user = backend.do_auth(data['social_token'])
+        except HTTPError as e:
+            raise WinkParseException(e.message + " when connecting to " + data['backend'])
+
+        if not self.user:
+            raise WinkParseException("after token user is none")
+
+        return None
+
+
+class RegisterBySocialAccessTokenView(SocialAccessTokenView):
+    serializer_class = EmptySerializer
+
+    def post(self, request, format=None):
+        response = super(RegisterBySocialAccessTokenView, self).post(request, format)
+        if response:
+            return response
+        if not self.user.last_login:
+            login(request, self.user)
+            serializer = UserSerializer(self.user, context={'request': request})
             returned_json = {
-                'token': get_access_token(user, app)
+                'user': serializer.data,
+                'token': get_access_token(self.user, self.app)
             }
-            return JsonResponse({'data': returned_json})
+            return Response(returned_json)
         else:
-            return _facebook_login_error("after token user is none")
-    except HTTPError as e:
-        return _facebook_login_error(e.message + " when connecting to " + data['backend'])
+            raise WinkParseException("user already registered")
+
+
+class LoginBySocialAccessTokenView(SocialAccessTokenView):
+    serializer_class = OAuthTokenSerializer
+
+    def post(self, request, format=None):
+        response = super(LoginBySocialAccessTokenView, self).post(request, format)
+        if response:
+            return response
+        login(request, self.user)
+        return Response(get_access_token(self.user, self.app))
 
 
 @api_view(['GET'])

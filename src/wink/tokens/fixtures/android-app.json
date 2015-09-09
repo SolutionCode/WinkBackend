@@ -1,0 +1,32 @@
+[
+  {
+   "fields": {
+      "phone_number": null,
+      "username": "Test App User",
+      "display_name": "",
+      "created_at": "2015-08-09T17:01:56.071Z",
+      "is_active": true,
+      "date_of_birth": null,
+      "last_login": null,
+      "is_admin": true,
+      "password": "pbkdf2_sha256$20000$xetaSDjPhXgp$3Bg7YvbFK8/6Z9ESvFwukZ3iXaFXuQ7VEqunYVh/A6Y=",
+      "email": "app@app.com"
+   },
+   "model": "users.user",
+   "pk": 1
+  },
+  {
+     "fields": {
+        "redirect_uris": "",
+        "name": "wink-android-app",
+        "client_type": "confidential",
+        "user": 1,
+        "client_id": "wink-android",
+        "skip_authorization": false,
+        "client_secret": "secret-android",
+        "authorization_grant_type": "password"
+     },
+     "model": "oauth2_provider.application",
+     "pk": 1
+  }
+]

@@ -1,5 +1,3 @@
-from collections import OrderedDict
-
 from rest_framework import renderers
 
 
@@ -22,11 +20,17 @@ class JSONRenderer(renderers.JSONRenderer):
                     }
                 }
             else:
-                data = {
-                    'data': {
-                        resource_name: data
+                if resource_name:
+                    data = {
+                        'data': {
+                            resource_name: data
+                        }
                     }
-                }
+                else:
+                    # special case for EmptySerializer, Register by social token
+                    data = {
+                        'data': data
+                    }
 
         response = super(JSONRenderer, self).render(data, accepted_media_type, renderer_context)
         return response
